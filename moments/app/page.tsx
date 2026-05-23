@@ -152,7 +152,12 @@ export default function Home() {
   );
 
   return (
-    <div ref={pageRef} style={{ background: "#000", minHeight: "100vh" }}>
+    <div
+      ref={pageRef}
+      style={{ background: "#000", minHeight: "100vh", position: "relative" }}
+    >
+      {isMobile && <GlobalGradientRail />}
+
       <motion.section
         style={{
           height: heroHeight,
@@ -179,8 +184,12 @@ export default function Home() {
           height: `${totalDistance}px`,
           width: "100%",
           background: "#000",
+          position: "relative",
+          overflow: "visible",
         }}
-      />
+      >
+        <SpacerArtwork />
+      </motion.section>
 
       {isMobile ? (
         <MobileLayout
@@ -511,8 +520,6 @@ function MobileLayout({
 }) {
   return (
     <div style={{ position: "relative", background: "#000" }}>
-      <GradientSideRail />
-
       <section
         style={{
           width: "100%",
@@ -581,7 +588,7 @@ function MobilePhoneWrapper({
   return <PhoneScene rotationY={phoneRotation} interactive={true} />;
 }
 
-function GradientSideRail() {
+function GlobalGradientRail() {
   return (
     <div
       style={{
@@ -611,6 +618,38 @@ function GradientSideRail() {
       >
         <source src="/videos/Gradient.mp4" type="video/mp4" />
       </video>
+    </div>
+  );
+}
+
+function SpacerArtwork() {
+  return (
+    <div
+      style={{
+        position: "sticky",
+        top: 0,
+        height: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        pointerEvents: "none",
+        zIndex: 2,
+      }}
+    >
+      <Image
+        src="/videos/Untitled-1.png"
+        alt="Spacer artwork"
+        width={900}
+        height={900}
+        priority
+        style={{
+          width: "min(80vw, 520px)",
+          height: "auto",
+          maxHeight: "68vh",
+          objectFit: "contain",
+          display: "block",
+        }}
+      />
     </div>
   );
 }
@@ -824,16 +863,16 @@ function LandingFooter({ mobile = false }: { mobile?: boolean }) {
             >
               keyaan
             </a>
-            and
+            {" "}and{" "}
             <a
               href="https://www.jadenlee.ca/"
               target="_blank"
               rel="noopener noreferrer"
-              style={{ textDecoration: "underline", marginLeft: "0.2rem" }}
+              style={{ textDecoration: "underline" }}
             >
               jaden
             </a>
-            for making us lock tf in :)
+            {" "}for making us lock tf in :)
           </p>
         </div>
 
@@ -871,7 +910,7 @@ function LandingFooter({ mobile = false }: { mobile?: boolean }) {
           aria-label="Open badge collection"
         >
           <img
-            src="/videos/Vector.ico"
+            src="/videos/Vector.png"
             alt="Badge collection icon"
             width={34}
             height={34}
