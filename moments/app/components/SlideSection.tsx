@@ -2,7 +2,6 @@
 
 import { useRef } from "react";
 import Image from "next/image";
-import { motion, useInView } from "framer-motion";
 
 interface SlideSectionProps {
   src: string;
@@ -18,18 +17,10 @@ export default function SlideSection({
   showDebug = false,
 }: SlideSectionProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const isInView = useInView(ref, { once: true, amount: 0.24 });
 
   return (
-    <motion.div
+    <div
       ref={ref}
-      initial={{ opacity: 0, y: 60 }}
-      animate={isInView ? { opacity: 1, y: 0 } : undefined}
-      transition={{
-        duration: 0.7,
-        ease: [0.25, 0.46, 0.45, 0.94],
-        delay: 0.05,
-      }}
       style={{
         width: "100%",
         padding: "2vh 0",
@@ -72,6 +63,6 @@ export default function SlideSection({
           </div>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 }

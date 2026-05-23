@@ -104,7 +104,6 @@ function useIsMobile(breakpoint = 768): boolean {
 export default function Home() {
   const pageRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
-  const showSlideDebug = false;
   const { scrollY } = useScroll();
 
   const { scrollYProgress } = useScroll({
@@ -129,10 +128,11 @@ export default function Home() {
     [0, 0, Math.PI, Math.PI]
   );
 
-  const curlDistance = isMobile ? 1240 : 980;
+  const curlDistance = isMobile ? 1520 : 980;
   const curledHeightVh = isMobile ? 12 : 9;
-  const blockerBase = isMobile ? 1960 : 2120;
-  const mobileSpacerReleaseDistance = 960;
+  const blockerBase = isMobile ? 2100 : 2120;
+  const mobileHoldOffset = 240;
+  const mobileSpacerReleaseDistance = 1240;
   const rawCurlProgress = useTransform(scrollY, [0, curlDistance], [0, 1], {
     clamp: true,
   });
@@ -154,35 +154,20 @@ export default function Home() {
       return Math.max(0, blockerBase * (1 - desktopProgress));
     }
 
-    if (value <= curlDistance) {
+    const mobileHoldDistance = curlDistance + mobileHoldOffset;
+    if (value <= mobileHoldDistance) {
       return blockerBase;
     }
 
     const t = Math.min(
       1,
-      Math.max(0, (value - curlDistance) / mobileSpacerReleaseDistance)
+      Math.max(0, (value - mobileHoldDistance) / mobileSpacerReleaseDistance)
     );
     const eased = t * t * (3 - 2 * t);
     return Math.max(0, blockerBase * (1 - eased));
   });
 
   const blockerHeightPx = useTransform(rawBlockerHeight, (value) => `${value}px`);
-  const mobilePhoneRevealProgress = useTransform(
-    scrollY,
-    [curlDistance + 140, curlDistance + 440],
-    [0, 1],
-    { clamp: true }
-  );
-  const mobilePhoneRevealOpacity = useTransform(
-    mobilePhoneRevealProgress,
-    [0, 0.35, 1],
-    [0, 0.25, 1]
-  );
-  const mobilePhoneRevealY = useTransform(
-    mobilePhoneRevealProgress,
-    [0, 1],
-    [44, 0]
-  );
 
   return (
     <div ref={pageRef} style={{ background: "#000", minHeight: "100vh" }}>
@@ -217,12 +202,10 @@ export default function Home() {
       {isMobile ? (
         <MobileLayout
           phoneRotation={phoneRotation}
-          showSlideDebug={showSlideDebug}
-          phoneRevealOpacity={mobilePhoneRevealOpacity}
-          phoneRevealY={mobilePhoneRevealY}
+          showSlideDebug={false}
         />
       ) : (
-        <DesktopLayout phoneRotation={phoneRotation} showSlideDebug={showSlideDebug} />
+        <DesktopLayout phoneRotation={phoneRotation} showSlideDebug={false} />
       )}
 
       {!isMobile && <LandingFooter />}
@@ -551,22 +534,16 @@ function DesktopPhoneWrapper({
 function MobileLayout({
   phoneRotation,
   showSlideDebug,
-  phoneRevealOpacity,
-  phoneRevealY,
 }: {
   phoneRotation: MotionValue<number>;
   showSlideDebug: boolean;
-  phoneRevealOpacity: MotionValue<number>;
-  phoneRevealY: MotionValue<number>;
 }) {
   return (
     <div style={{ position: "relative", background: "#000" }}>
       <GradientSideRail />
 
-      <motion.section
+      <section
         style={{
-          opacity: phoneRevealOpacity,
-          y: phoneRevealY,
           width: "100%",
           height: "70vh",
           position: "relative",
@@ -597,7 +574,7 @@ function MobileLayout({
         <div style={{ width: "100%", height: "100%" }}>
           <MobilePhoneWrapper phoneRotation={phoneRotation} />
         </div>
-      </motion.section>
+      </section>
 
       <section
         style={{
@@ -935,27 +912,6 @@ function LandingFooter({ mobile = false }: { mobile?: boolean }) {
       <AnimatePresence>
         {isBadgeOpen && (
           <>
-            {mobile && (
-              <motion.button
-                key="badge-backdrop-mobile"
-                type="button"
-                aria-label="Close badge popup"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.18, ease: "easeOut" }}
-                onClick={() => setIsBadgeOpen(false)}
-                style={{
-                  position: "fixed",
-                  inset: 0,
-                  border: "none",
-                  background: "rgba(0, 0, 0, 0.24)",
-                  zIndex: 119,
-                  cursor: "pointer",
-                }}
-              />
-            )}
-
             <motion.div
               key="badge-card"
               initial={{ opacity: 0, y: 12, scale: 0.96 }}
@@ -964,25 +920,40 @@ function LandingFooter({ mobile = false }: { mobile?: boolean }) {
               transition={{ duration: 0.24, ease: "easeOut" }}
               style={{
                 position: mobile ? "fixed" : "absolute",
-                left: mobile ? "50%" : "auto",
-                right: mobile ? "auto" : "1.1rem",
-                top: mobile ? "50%" : "auto",
-                bottom: mobile ? "auto" : "112px",
-                margin: 0,
-                overflow: "hidden",
-                transform: mobile ? "translate(-50%, -50%)" : "none",
-                width: mobile ? "min(92vw, 360px)" : "380px",
+                inset: mobile ? 0 : "auto",
+                left: mobile ? 0 : "auto",
+                right: mobile ? 0 : "1.1rem",
+                top: mobile ? 0 : "auto",
+                bottom: mobile ? 0 : "112px",
+                margin: mobile ? "auto" : 0,
+                width: mobile ? "100%" : "380px",
+                height: mobile ? "100%" : "auto",
                 borderRadius: "20px",
-                border: "1px solid rgba(255,255,255,0.2)",
-                background: "rgba(0, 0, 0, 0.76)",
-                backdropFilter: "blur(7px)",
-                padding: mobile ? "1rem 0.9rem" : "1.05rem",
-                color: "#fff",
                 zIndex: 120,
-                fontFamily: '"Instagram Sans", "Segoe UI", Helvetica, Arial, sans-serif',
+                display: mobile ? "flex" : "block",
+                alignItems: mobile ? "center" : "initial",
+                justifyContent: mobile ? "center" : "initial",
+                background: mobile ? "rgba(0, 0, 0, 0.24)" : "transparent",
+                overflow: "hidden",
               }}
-              onClick={(event) => event.stopPropagation()}
+              onClick={() => {
+                if (mobile) setIsBadgeOpen(false);
+              }}
             >
+              <div
+                onClick={(event) => event.stopPropagation()}
+                style={{
+                  width: mobile ? "min(92vw, 360px)" : "380px",
+                  borderRadius: "20px",
+                  border: "1px solid rgba(255,255,255,0.2)",
+                  background: "rgba(0, 0, 0, 0.76)",
+                  backdropFilter: "blur(7px)",
+                  padding: mobile ? "1rem 0.9rem" : "1.05rem",
+                  color: "#fff",
+                  fontFamily: '"Instagram Sans", "Segoe UI", Helvetica, Arial, sans-serif',
+                  overflow: "hidden",
+                }}
+              >
             <p
               style={{
                 fontSize: mobile ? "1.04rem" : "1.12rem",
@@ -1142,6 +1113,7 @@ function LandingFooter({ mobile = false }: { mobile?: boolean }) {
             >
               (try refreshing the page...)
             </p>
+              </div>
             </motion.div>
           </>
         )}
