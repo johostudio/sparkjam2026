@@ -80,9 +80,9 @@ const FIGMA_PROTO_URL =
   "https://www.figma.com/design/w0BrBbqlmgZwMhzdMNOleB/Revision--test-?node-id=2079-3140&t=1XX630OBlW6hYhHn-1";
 const PROJECT_PAGE_URL = "https://www.sparkjam.design/";
 const BADGE_IMAGES = [
-  "/videos/image 3.png",
-  "/videos/image 4.png",
-  "/videos/image 5.png",
+  "/videos/badge-1.png",
+  "/videos/badge-2.png",
+  "/videos/badge-3.png",
 ] as const;
 const BADGE_TIP_TEXT = [
   "first badge!",
@@ -762,16 +762,21 @@ function LandingFooter({ mobile = false }: { mobile?: boolean }) {
     if (typeof window === "undefined") return;
 
     const storageKey = "sparkjam_badges_count_v1";
-    const stored = Number.parseInt(localStorage.getItem(storageKey) ?? "0", 10);
-    let nextCount = Number.isFinite(stored) ? stored : 0;
-    nextCount = Math.max(0, Math.min(3, nextCount));
-
-    nextCount = Math.min(3, nextCount + 1);
-    localStorage.setItem(storageKey, String(nextCount));
-
-    window.requestAnimationFrame(() => {
-      setBadgeCount(nextCount);
-    });
+    try {
+      const stored = Number.parseInt(localStorage.getItem(storageKey) ?? "0", 10);
+      let nextCount = Number.isFinite(stored) ? stored : 0;
+      nextCount = Math.max(0, Math.min(3, nextCount));
+      nextCount = Math.min(3, nextCount + 1);
+      localStorage.setItem(storageKey, String(nextCount));
+      window.requestAnimationFrame(() => {
+        setBadgeCount(nextCount);
+      });
+    } catch {
+      // Fallback when storage is unavailable.
+      window.requestAnimationFrame(() => {
+        setBadgeCount((prev) => Math.min(3, Math.max(1, prev + 1)));
+      });
+    }
   }, []);
 
   useEffect(() => {
