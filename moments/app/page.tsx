@@ -762,16 +762,12 @@ function LandingFooter({ mobile = false }: { mobile?: boolean }) {
     if (typeof window === "undefined") return;
 
     const storageKey = "sparkjam_badges_count_v1";
-    const sessionKey = "sparkjam_badges_visit_awarded_v1";
     const stored = Number.parseInt(localStorage.getItem(storageKey) ?? "0", 10);
     let nextCount = Number.isFinite(stored) ? stored : 0;
     nextCount = Math.max(0, Math.min(3, nextCount));
 
-    if (!sessionStorage.getItem(sessionKey)) {
-      nextCount = Math.min(3, nextCount + 1);
-      localStorage.setItem(storageKey, String(nextCount));
-      sessionStorage.setItem(sessionKey, "1");
-    }
+    nextCount = Math.min(3, nextCount + 1);
+    localStorage.setItem(storageKey, String(nextCount));
 
     window.requestAnimationFrame(() => {
       setBadgeCount(nextCount);
