@@ -70,7 +70,7 @@ const SLIDES = [
 const INTRO_VIDEO_URL = "https://www.youtube.com/watch?v=apK5kau4vqA";
 const FIGMA_PROTO_URL =
   "https://www.figma.com/proto/w0BrBbqlmgZwMhzdMNOleB/Revision--test-?node-id=2079-3140&t=qprsDXmkDsqGSE2F-1";
-const PROJECT_PAGE_URL = "https://portal.sfusurge.com/projects";
+const PROJECT_PAGE_URL = "https://www.sparkjam.design/";
 const BADGE_IMAGES = [
   "/videos/image 3.png",
   "/videos/image 4.png",
@@ -167,6 +167,22 @@ export default function Home() {
   });
 
   const blockerHeightPx = useTransform(rawBlockerHeight, (value) => `${value}px`);
+  const mobilePhoneRevealProgress = useTransform(
+    scrollY,
+    [curlDistance + 140, curlDistance + 440],
+    [0, 1],
+    { clamp: true }
+  );
+  const mobilePhoneRevealOpacity = useTransform(
+    mobilePhoneRevealProgress,
+    [0, 0.35, 1],
+    [0, 0.25, 1]
+  );
+  const mobilePhoneRevealY = useTransform(
+    mobilePhoneRevealProgress,
+    [0, 1],
+    [44, 0]
+  );
 
   return (
     <div ref={pageRef} style={{ background: "#000", minHeight: "100vh" }}>
@@ -199,7 +215,12 @@ export default function Home() {
       />
 
       {isMobile ? (
-        <MobileLayout phoneRotation={phoneRotation} showSlideDebug={showSlideDebug} />
+        <MobileLayout
+          phoneRotation={phoneRotation}
+          showSlideDebug={showSlideDebug}
+          phoneRevealOpacity={mobilePhoneRevealOpacity}
+          phoneRevealY={mobilePhoneRevealY}
+        />
       ) : (
         <DesktopLayout phoneRotation={phoneRotation} showSlideDebug={showSlideDebug} />
       )}
@@ -410,7 +431,7 @@ function HeroQuickLinks({ mobile }: { mobile: boolean }) {
               position: "fixed",
               left: activeTip.x,
               top: activeTip.y,
-              transform: "translate(-50%, -125%)",
+              transform: "translate(-50%, -50%)",
             }}
           >
             <span className="quick-link-tip-title">
@@ -530,16 +551,22 @@ function DesktopPhoneWrapper({
 function MobileLayout({
   phoneRotation,
   showSlideDebug,
+  phoneRevealOpacity,
+  phoneRevealY,
 }: {
   phoneRotation: MotionValue<number>;
   showSlideDebug: boolean;
+  phoneRevealOpacity: MotionValue<number>;
+  phoneRevealY: MotionValue<number>;
 }) {
   return (
     <div style={{ position: "relative", background: "#000" }}>
       <GradientSideRail />
 
-      <section
+      <motion.section
         style={{
+          opacity: phoneRevealOpacity,
+          y: phoneRevealY,
           width: "100%",
           height: "70vh",
           position: "relative",
@@ -570,7 +597,7 @@ function MobileLayout({
         <div style={{ width: "100%", height: "100%" }}>
           <MobilePhoneWrapper phoneRotation={phoneRotation} />
         </div>
-      </section>
+      </motion.section>
 
       <section
         style={{
@@ -907,34 +934,55 @@ function LandingFooter({ mobile = false }: { mobile?: boolean }) {
 
       <AnimatePresence>
         {isBadgeOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: 12, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 8, scale: 0.98 }}
-            transition={{ duration: 0.24, ease: "easeOut" }}
-            style={{
-              position: mobile ? "fixed" : "absolute",
-              inset: mobile ? 0 : "auto",
-              left: mobile ? 0 : "auto",
-              right: mobile ? 0 : "1.1rem",
-              top: mobile ? 0 : "auto",
-              bottom: mobile ? 0 : "112px",
-              margin: mobile ? "auto" : 0,
-              height: mobile ? "fit-content" : "auto",
-              maxHeight: "none",
-              overflow: "hidden",
-              transform: "none",
-              width: mobile ? "min(92vw, 360px)" : "380px",
-              borderRadius: "20px",
-              border: "1px solid rgba(255,255,255,0.2)",
-              background: "rgba(0, 0, 0, 0.76)",
-              backdropFilter: "blur(7px)",
-              padding: mobile ? "1rem 0.9rem" : "1.05rem",
-              color: "#fff",
-              zIndex: 120,
-              fontFamily: '"Instagram Sans", "Segoe UI", Helvetica, Arial, sans-serif',
-            }}
-          >
+          <>
+            {mobile && (
+              <motion.button
+                key="badge-backdrop-mobile"
+                type="button"
+                aria-label="Close badge popup"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.18, ease: "easeOut" }}
+                onClick={() => setIsBadgeOpen(false)}
+                style={{
+                  position: "fixed",
+                  inset: 0,
+                  border: "none",
+                  background: "rgba(0, 0, 0, 0.24)",
+                  zIndex: 119,
+                  cursor: "pointer",
+                }}
+              />
+            )}
+
+            <motion.div
+              key="badge-card"
+              initial={{ opacity: 0, y: 12, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 8, scale: 0.98 }}
+              transition={{ duration: 0.24, ease: "easeOut" }}
+              style={{
+                position: mobile ? "fixed" : "absolute",
+                left: mobile ? "50%" : "auto",
+                right: mobile ? "auto" : "1.1rem",
+                top: mobile ? "50%" : "auto",
+                bottom: mobile ? "auto" : "112px",
+                margin: 0,
+                overflow: "hidden",
+                transform: mobile ? "translate(-50%, -50%)" : "none",
+                width: mobile ? "min(92vw, 360px)" : "380px",
+                borderRadius: "20px",
+                border: "1px solid rgba(255,255,255,0.2)",
+                background: "rgba(0, 0, 0, 0.76)",
+                backdropFilter: "blur(7px)",
+                padding: mobile ? "1rem 0.9rem" : "1.05rem",
+                color: "#fff",
+                zIndex: 120,
+                fontFamily: '"Instagram Sans", "Segoe UI", Helvetica, Arial, sans-serif',
+              }}
+              onClick={(event) => event.stopPropagation()}
+            >
             <p
               style={{
                 fontSize: mobile ? "1.04rem" : "1.12rem",
@@ -1035,7 +1083,7 @@ function LandingFooter({ mobile = false }: { mobile?: boolean }) {
                             position: "fixed",
                             top: activeBadgeTip.y,
                             left: activeBadgeTip.x,
-                            transform: "translate(-50%, -118%)",
+                            transform: "translate(-50%, -50%)",
                             whiteSpace: "nowrap",
                             fontSize: "0.56rem",
                             lineHeight: 1.1,
@@ -1094,7 +1142,8 @@ function LandingFooter({ mobile = false }: { mobile?: boolean }) {
             >
               (try refreshing the page...)
             </p>
-          </motion.div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </footer>
