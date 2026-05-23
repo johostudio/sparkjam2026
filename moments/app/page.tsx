@@ -81,8 +81,8 @@ const FIGMA_PROTO_URL =
 const PROJECT_PAGE_URL = "https://www.sparkjam.design/";
 const BADGE_IMAGES = [
   "/videos/badge-1.png",
-  "/videos/badge-2.png",
   "/videos/badge-3.png",
+  "/videos/badge-2.png",
 ] as const;
 const BADGE_TIP_TEXT = [
   "first badge!",
