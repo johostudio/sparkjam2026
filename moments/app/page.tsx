@@ -82,6 +82,8 @@ const BADGE_TIP_TEXT = [
   "thats all of them :)",
 ] as const;
 
+const easeInOut = (t: number) => t * t * (3 - 2 * t);
+
 function useIsMobile(breakpoint = 768): boolean {
   const [isMobile, setIsMobile] = useState(false);
 
@@ -132,10 +134,20 @@ export default function Home() {
   const curledHeightVh = isMobile ? 12 : 9;
   const blockerBase = isMobile ? 2100 : 1760;
   const blockerReleaseDistance = isMobile ? 1180 : 860;
-  const rawCurlProgress = useTransform(scrollY, [0, curlDistance], [0, 1], {
+  const totalDistance = curlDistance + blockerReleaseDistance;
+  const curlPhaseEnd = curlDistance / totalDistance;
+  const rawPhaseProgress = useTransform(scrollY, [0, totalDistance], [0, 1], {
     clamp: true,
   });
-  const curlProgress = rawCurlProgress;
+  const curlProgress = useTransform(rawPhaseProgress, [0, curlPhaseEnd], [0, 1], {
+    clamp: true,
+  });
+  const releaseProgress = useTransform(
+    rawPhaseProgress,
+    [curlPhaseEnd, 1],
+    [0, 1],
+    { clamp: true }
+  );
 
   const heroHeight = useTransform(
     curlProgress,
@@ -147,20 +159,10 @@ export default function Home() {
     (value) =>
       `0 ${Math.round(8 + 22 * value)}px ${Math.round(20 + 34 * value)}px rgba(0, 0, 0, ${(0.16 + value * 0.45).toFixed(3)})`
   );
-  const rawBlockerHeight = useTransform(scrollY, (value) => {
-    if (value <= curlDistance) {
-      return blockerBase;
-    }
-
-    const t = Math.min(
-      1,
-      Math.max(0, (value - curlDistance) / blockerReleaseDistance)
-    );
-    const eased = t * t * (3 - 2 * t);
-    return Math.max(0, blockerBase * (1 - eased));
+  const blockerHeightPx = useTransform(releaseProgress, (value) => {
+    const eased = easeInOut(value);
+    return `${Math.max(0, blockerBase * (1 - eased))}px`;
   });
-
-  const blockerHeightPx = useTransform(rawBlockerHeight, (value) => `${value}px`);
 
   return (
     <div ref={pageRef} style={{ background: "#000", minHeight: "100vh" }}>
@@ -265,15 +267,6 @@ function HeroQuickLinks({ mobile }: { mobile: boolean }) {
     setTipAtPoint(tip, event.clientX, event.clientY);
   };
 
-  const onIconMouseMove = (
-    event: MouseEvent<HTMLAnchorElement>,
-    tip: QuickLinkTip
-  ) => {
-    if (activeTip?.key === tip) {
-      setTipAtPoint(tip, event.clientX, event.clientY);
-    }
-  };
-
   const onIconFocus = (event: FocusEvent<HTMLAnchorElement>, tip: QuickLinkTip) => {
     const rect = event.currentTarget.getBoundingClientRect();
     setTipAtPoint(tip, rect.left + rect.width / 2, rect.top + rect.height / 2);
@@ -319,7 +312,6 @@ function HeroQuickLinks({ mobile }: { mobile: boolean }) {
         rel="noopener noreferrer"
         aria-label="Open Figma prototype"
         onMouseEnter={(event) => onIconMouseEnter(event, "figma")}
-        onMouseMove={(event) => onIconMouseMove(event, "figma")}
         onMouseLeave={hideTip}
         onFocus={(event) => onIconFocus(event, "figma")}
         onBlur={hideTip}
@@ -342,7 +334,6 @@ function HeroQuickLinks({ mobile }: { mobile: boolean }) {
         rel="noopener noreferrer"
         aria-label="Open YouTube video"
         onMouseEnter={(event) => onIconMouseEnter(event, "youtube")}
-        onMouseMove={(event) => onIconMouseMove(event, "youtube")}
         onMouseLeave={hideTip}
         onFocus={(event) => onIconFocus(event, "youtube")}
         onBlur={hideTip}
@@ -365,7 +356,6 @@ function HeroQuickLinks({ mobile }: { mobile: boolean }) {
         rel="noopener noreferrer"
         aria-label="Open project page"
         onMouseEnter={(event) => onIconMouseEnter(event, "project")}
-        onMouseMove={(event) => onIconMouseMove(event, "project")}
         onMouseLeave={hideTip}
         onFocus={(event) => onIconFocus(event, "project")}
         onBlur={hideTip}
@@ -893,7 +883,7 @@ function LandingFooter({ mobile = false }: { mobile?: boolean }) {
           aria-label="Open badge collection"
         >
           <Image
-            src="/videos/vector.ico"
+            src="/videos/Vector.ico"
             alt="Badge collection icon"
             width={34}
             height={34}
@@ -988,11 +978,6 @@ function LandingFooter({ mobile = false }: { mobile?: boolean }) {
                     onMouseEnter={(event) =>
                       setBadgeTipAtPoint(slot, event.clientX, event.clientY)
                     }
-                    onMouseMove={(event) => {
-                      if (activeBadgeTip?.slot === slot) {
-                        setBadgeTipAtPoint(slot, event.clientX, event.clientY);
-                      }
-                    }}
                     onMouseLeave={() => setActiveBadgeTip(null)}
                     onTouchStart={(event) => onBadgeTouchPreview(event, slot)}
                     whileHover={{ scale: 1.04, y: -1 }}
