@@ -196,7 +196,10 @@ export default function Home() {
           overflow: "visible",
         }}
       >
-        <SpacerArtwork />
+        <SpacerArtwork
+          revealProgress={rawPhaseProgress}
+          revealStart={curlPhaseEnd}
+        />
       </motion.section>
 
       {isMobile ? (
@@ -327,6 +330,7 @@ function HeroQuickLinks({ mobile }: { mobile: boolean }) {
           color: "#fff",
           opacity: 0.96,
           position: "relative",
+          marginLeft: "0.14rem",
           overflow: "visible",
         }}
       >
@@ -641,15 +645,27 @@ function GlobalGradientRail() {
   );
 }
 
-function SpacerArtwork() {
+function SpacerArtwork({
+  revealProgress,
+  revealStart,
+}: {
+  revealProgress: MotionValue<number>;
+  revealStart: number;
+}) {
   const artworkRef = useRef<HTMLDivElement>(null);
   const isInView = useInView(artworkRef, { margin: "-12% 0px -12% 0px" });
+  const revealBlend = useTransform(
+    revealProgress,
+    [Math.max(0, revealStart - 0.01), revealStart + 0.09],
+    [0, 1],
+    { clamp: true }
+  );
+  const revealStrength = useTransform(revealBlend, (v) => (isInView ? v : 0));
+  const opacity = useTransform(revealStrength, [0, 1], [0, 1]);
+  const scale = useTransform(revealStrength, [0, 1], [0.78, 1.08]);
+  const y = useTransform(revealStrength, [0, 1], [154, 92]);
+  const blur = useTransform(revealStrength, [0, 1], [12, 0]);
   const style: CSSProperties = {
-    opacity: isInView ? 1 : 0,
-    transform: isInView
-      ? "translateY(92px) scale(1.08)"
-      : "translateY(154px) scale(0.78)",
-    filter: isInView ? "blur(0px)" : "blur(12px)",
     transition:
       "opacity 420ms ease-out, transform 620ms cubic-bezier(0.22, 1, 0.36, 1), filter 520ms ease-out",
     willChange: "opacity, transform, filter",
@@ -669,7 +685,15 @@ function SpacerArtwork() {
         zIndex: 2,
       }}
     >
-      <div style={style}>
+      <motion.div
+        style={{
+          ...style,
+          opacity,
+          scale,
+          y,
+          filter: useTransform(blur, (v) => `blur(${v}px)`),
+        }}
+      >
         <Image
           src="/videos/Untitled-1.png"
           alt="Spacer artwork"
@@ -684,7 +708,7 @@ function SpacerArtwork() {
             display: "block",
           }}
         />
-      </div>
+      </motion.div>
     </div>
   );
 }
