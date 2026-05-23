@@ -69,7 +69,7 @@ const SLIDES = [
 
 const INTRO_VIDEO_URL = "https://www.youtube.com/watch?v=apK5kau4vqA";
 const FIGMA_PROTO_URL =
-  "https://www.figma.com/proto/w0BrBbqlmgZwMhzdMNOleB/Revision--test-?node-id=2079-3140&t=qprsDXmkDsqGSE2F-1";
+  "https://www.figma.com/design/w0BrBbqlmgZwMhzdMNOleB/Revision--test-?node-id=2079-3140&t=1XX630OBlW6hYhHn-1";
 const PROJECT_PAGE_URL = "https://www.sparkjam.design/";
 const BADGE_IMAGES = [
   "/videos/image 3.png",
@@ -870,7 +870,7 @@ function LandingFooter({ mobile = false }: { mobile?: boolean }) {
           }}
           aria-label="Open badge collection"
         >
-          <Image
+          <img
             src="/videos/Vector.ico"
             alt="Badge collection icon"
             width={34}
