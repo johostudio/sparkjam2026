@@ -82,8 +82,6 @@ const BADGE_TIP_TEXT = [
   "thats all of them :)",
 ] as const;
 
-const easeInOut = (t: number) => t * t * (3 - 2 * t);
-
 function useIsMobile(breakpoint = 768): boolean {
   const [isMobile, setIsMobile] = useState(false);
 
@@ -130,11 +128,10 @@ export default function Home() {
     [0, 0, Math.PI, Math.PI]
   );
 
-  const curlDistance = isMobile ? 1560 : 1120;
+  const curlDistance = isMobile ? 1600 : 1260;
   const curledHeightVh = isMobile ? 12 : 9;
-  const blockerBase = isMobile ? 2100 : 1760;
-  const blockerReleaseDistance = isMobile ? 1180 : 860;
-  const totalDistance = curlDistance + blockerReleaseDistance;
+  const postCurlHoldDistance = isMobile ? 1900 : 1300;
+  const totalDistance = curlDistance + postCurlHoldDistance;
   const curlPhaseEnd = curlDistance / totalDistance;
   const rawPhaseProgress = useTransform(scrollY, [0, totalDistance], [0, 1], {
     clamp: true,
@@ -142,12 +139,6 @@ export default function Home() {
   const curlProgress = useTransform(rawPhaseProgress, [0, curlPhaseEnd], [0, 1], {
     clamp: true,
   });
-  const releaseProgress = useTransform(
-    rawPhaseProgress,
-    [curlPhaseEnd, 1],
-    [0, 1],
-    { clamp: true }
-  );
 
   const heroHeight = useTransform(
     curlProgress,
@@ -159,10 +150,6 @@ export default function Home() {
     (value) =>
       `0 ${Math.round(8 + 22 * value)}px ${Math.round(20 + 34 * value)}px rgba(0, 0, 0, ${(0.16 + value * 0.45).toFixed(3)})`
   );
-  const blockerHeightPx = useTransform(releaseProgress, (value) => {
-    const eased = easeInOut(value);
-    return `${Math.max(0, blockerBase * (1 - eased))}px`;
-  });
 
   return (
     <div ref={pageRef} style={{ background: "#000", minHeight: "100vh" }}>
@@ -173,8 +160,10 @@ export default function Home() {
           borderBottomRightRadius: heroRadius,
           boxShadow: heroShadow,
           width: "100%",
-          position: "sticky",
+          position: "fixed",
           top: 0,
+          left: 0,
+          right: 0,
           zIndex: 70,
           overflow: "hidden",
           willChange: "height, border-radius, box-shadow",
@@ -187,10 +176,9 @@ export default function Home() {
       <motion.section
         aria-hidden
         style={{
-          height: blockerHeightPx,
+          height: `${totalDistance}px`,
           width: "100%",
           background: "#000",
-          willChange: "height",
         }}
       />
 
