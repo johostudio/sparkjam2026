@@ -331,7 +331,7 @@ function HeroQuickLinks({ mobile }: { mobile: boolean }) {
           opacity: 0.96,
           position: "relative",
           marginLeft: "0rem",
-          transform: "translateX(1.4rem)",
+          transform: "translateX(1.0rem)",
           overflow: "visible",
         }}
       >
