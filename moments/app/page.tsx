@@ -128,11 +128,10 @@ export default function Home() {
     [0, 0, Math.PI, Math.PI]
   );
 
-  const curlDistance = isMobile ? 1520 : 980;
+  const curlDistance = isMobile ? 1560 : 1120;
   const curledHeightVh = isMobile ? 12 : 9;
-  const blockerBase = isMobile ? 2100 : 2120;
-  const mobileHoldOffset = 240;
-  const mobileSpacerReleaseDistance = 1240;
+  const blockerBase = isMobile ? 2100 : 1760;
+  const blockerReleaseDistance = isMobile ? 1180 : 860;
   const rawCurlProgress = useTransform(scrollY, [0, curlDistance], [0, 1], {
     clamp: true,
   });
@@ -149,19 +148,13 @@ export default function Home() {
       `0 ${Math.round(8 + 22 * value)}px ${Math.round(20 + 34 * value)}px rgba(0, 0, 0, ${(0.16 + value * 0.45).toFixed(3)})`
   );
   const rawBlockerHeight = useTransform(scrollY, (value) => {
-    if (!isMobile) {
-      const desktopProgress = Math.min(1, Math.max(0, value / curlDistance));
-      return Math.max(0, blockerBase * (1 - desktopProgress));
-    }
-
-    const mobileHoldDistance = curlDistance + mobileHoldOffset;
-    if (value <= mobileHoldDistance) {
+    if (value <= curlDistance) {
       return blockerBase;
     }
 
     const t = Math.min(
       1,
-      Math.max(0, (value - mobileHoldDistance) / mobileSpacerReleaseDistance)
+      Math.max(0, (value - curlDistance) / blockerReleaseDistance)
     );
     const eased = t * t * (3 - 2 * t);
     return Math.max(0, blockerBase * (1 - eased));
@@ -900,7 +893,7 @@ function LandingFooter({ mobile = false }: { mobile?: boolean }) {
           aria-label="Open badge collection"
         >
           <Image
-            src="/videos/Vector.png"
+            src="/videos/vector.ico"
             alt="Badge collection icon"
             width={34}
             height={34}
