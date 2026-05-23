@@ -330,7 +330,17 @@ function HeroQuickLinks({ mobile }: { mobile: boolean }) {
           overflow: "visible",
         }}
       >
-        <FigmaIcon />
+        <span
+          style={{
+            width: "100%",
+            height: "100%",
+            display: "inline-flex",
+            transform: "scale(0.86)",
+            transformOrigin: "center",
+          }}
+        >
+          <FigmaIcon />
+        </span>
       </a>
       <a
         className="quick-link-icon"
@@ -636,9 +646,13 @@ function SpacerArtwork() {
   const isInView = useInView(artworkRef, { margin: "-12% 0px -12% 0px" });
   const style: CSSProperties = {
     opacity: isInView ? 1 : 0,
-    transform: isInView ? "translateY(88px) scale(1)" : "translateY(108px) scale(0.95)",
-    transition: "opacity 320ms ease-out, transform 420ms cubic-bezier(0.22, 1, 0.36, 1)",
-    willChange: "opacity, transform",
+    transform: isInView
+      ? "translateY(92px) scale(1.08)"
+      : "translateY(154px) scale(0.78)",
+    filter: isInView ? "blur(0px)" : "blur(12px)",
+    transition:
+      "opacity 420ms ease-out, transform 620ms cubic-bezier(0.22, 1, 0.36, 1), filter 520ms ease-out",
+    willChange: "opacity, transform, filter",
   };
 
   return (
