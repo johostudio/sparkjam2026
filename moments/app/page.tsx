@@ -330,7 +330,7 @@ function HeroQuickLinks({ mobile }: { mobile: boolean }) {
           color: "#fff",
           opacity: 0.96,
           position: "relative",
-          marginLeft: "0.03rem",
+          marginLeft: "-0.01rem",
           overflow: "visible",
         }}
       >
