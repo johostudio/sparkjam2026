@@ -1,1 +1,1 @@
- a little demo site for our sparkjam project !
+# a little demo site for our sparkjam project :)

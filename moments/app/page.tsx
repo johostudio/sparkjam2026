@@ -330,7 +330,8 @@ function HeroQuickLinks({ mobile }: { mobile: boolean }) {
           color: "#fff",
           opacity: 0.96,
           position: "relative",
-          marginLeft: "1.0rem",
+          marginLeft: "0rem",
+          transform: "translateX(2.0rem)",
           overflow: "visible",
         }}
       >
@@ -1216,3 +1217,4 @@ function LandingFooter({ mobile = false }: { mobile?: boolean }) {
     </footer>
   );
 }
+
