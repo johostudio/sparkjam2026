@@ -330,7 +330,7 @@ function HeroQuickLinks({ mobile }: { mobile: boolean }) {
           color: "#fff",
           opacity: 0.96,
           position: "relative",
-          marginLeft: "-0.01rem",
+          marginLeft: "-0.1rem",
           overflow: "visible",
         }}
       >
@@ -1054,160 +1054,160 @@ function LandingFooter({ mobile = false }: { mobile?: boolean }) {
                   overflow: "hidden",
                 }}
               >
-            <p
-              style={{
-                fontSize: mobile ? "1.04rem" : "1.12rem",
-                fontWeight: 700,
-                lineHeight: 1.1,
-                marginBottom: "0.3rem",
-                textAlign: "center",
-              }}
-            >
-              badge collection !
-            </p>
-            <p
-              style={{
-                fontSize: mobile ? "0.86rem" : "0.9rem",
-                lineHeight: 1.2,
-                color: "rgba(255,255,255,0.88)",
-                textAlign: "center",
-                marginBottom: "0.85rem",
-                fontWeight: 400,
-              }}
-            >
-              thanks for stopping by :)
-            </p>
+                <p
+                  style={{
+                    fontSize: mobile ? "1.04rem" : "1.12rem",
+                    fontWeight: 700,
+                    lineHeight: 1.1,
+                    marginBottom: "0.3rem",
+                    textAlign: "center",
+                  }}
+                >
+                  badge collection !
+                </p>
+                <p
+                  style={{
+                    fontSize: mobile ? "0.86rem" : "0.9rem",
+                    lineHeight: 1.2,
+                    color: "rgba(255,255,255,0.88)",
+                    textAlign: "center",
+                    marginBottom: "0.85rem",
+                    fontWeight: 400,
+                  }}
+                >
+                  thanks for stopping by :)
+                </p>
 
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-                gap: mobile ? "0.6rem" : "0.75rem",
-                marginBottom: "0.6rem",
-              }}
-            >
-              {BADGE_IMAGES.map((badgeImage, slot) => {
-                const unlocked = slot < badgeCount;
-                return (
-                  <motion.button
-                    key={slot}
-                    type="button"
-                    onMouseEnter={(event) =>
-                      setBadgeTipAtPoint(slot, event.clientX, event.clientY)
-                    }
-                    onMouseLeave={() => setActiveBadgeTip(null)}
-                    onTouchStart={(event) => onBadgeTouchPreview(event, slot)}
-                    whileHover={{ scale: 1.04, y: -1 }}
-                    whileTap={{ scale: 0.98 }}
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+                    gap: mobile ? "0.6rem" : "0.75rem",
+                    marginBottom: "0.6rem",
+                  }}
+                >
+                  {BADGE_IMAGES.map((badgeImage, slot) => {
+                    const unlocked = slot < badgeCount;
+                    return (
+                      <motion.button
+                        key={slot}
+                        type="button"
+                        onMouseEnter={(event) =>
+                          setBadgeTipAtPoint(slot, event.clientX, event.clientY)
+                        }
+                        onMouseLeave={() => setActiveBadgeTip(null)}
+                        onTouchStart={(event) => onBadgeTouchPreview(event, slot)}
+                        whileHover={{ scale: 1.04, y: -1 }}
+                        whileTap={{ scale: 0.98 }}
+                        style={{
+                          position: "relative",
+                          minHeight: mobile ? "80px" : "96px",
+                          width: "100%",
+                          borderRadius: "14px",
+                          border: "1px solid rgba(255,255,255,0.2)",
+                          padding: "0.35rem",
+                          background: "rgba(255,255,255,0.06)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          cursor: "pointer",
+                        }}
+                      >
+                        {unlocked ? (
+                          <Image
+                            src={badgeImage}
+                            alt={`Badge ${slot + 1}`}
+                            width={84}
+                            height={84}
+                            style={{
+                              width: "100%",
+                              height: "auto",
+                              maxHeight: mobile ? "74px" : "86px",
+                              objectFit: "contain",
+                            }}
+                          />
+                        ) : (
+                          <span
+                            aria-hidden
+                            style={{
+                              width: "11px",
+                              height: "11px",
+                              borderRadius: "999px",
+                              background: "rgba(255,255,255,0.28)",
+                              display: "inline-block",
+                            }}
+                          />
+                        )}
+                        <AnimatePresence>
+                          {activeBadgeTip?.slot === slot && (
+                            <motion.span
+                              initial={{ opacity: 0, y: 4, scale: 0.98 }}
+                              animate={{ opacity: 1, y: 0, scale: 1 }}
+                              exit={{ opacity: 0, y: 3, scale: 0.99 }}
+                              transition={{ duration: 0.16, ease: "easeOut" }}
+                              style={{
+                                position: "fixed",
+                                top: activeBadgeTip.y,
+                                left: activeBadgeTip.x,
+                                transform: "translate(-50%, -50%)",
+                                whiteSpace: "nowrap",
+                                fontSize: "0.56rem",
+                                lineHeight: 1.1,
+                                color: "#f1f1f1",
+                                background: "rgba(7, 7, 8, 0.74)",
+                                border: "1px solid rgba(255,255,255,0.16)",
+                                borderRadius: "999px",
+                                padding: "0.24rem 0.4rem",
+                                pointerEvents: "none",
+                                zIndex: 320,
+                                fontWeight: 400,
+                              }}
+                            >
+                              {BADGE_TIP_TEXT[slot]}
+                            </motion.span>
+                          )}
+                        </AnimatePresence>
+                      </motion.button>
+                    );
+                  })}
+                </div>
+
+                {badgeCount < 3 ? (
+                  <p
                     style={{
-                      position: "relative",
-                      minHeight: mobile ? "80px" : "96px",
-                      width: "100%",
-                      borderRadius: "14px",
-                      border: "1px solid rgba(255,255,255,0.2)",
-                      padding: "0.35rem",
-                      background: "rgba(255,255,255,0.06)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      cursor: "pointer",
+                      fontSize: mobile ? "0.95rem" : "1rem",
+                      lineHeight: 1.3,
+                      opacity: 0.8,
+                      textAlign: "center",
                     }}
                   >
-                    {unlocked ? (
-                      <Image
-                        src={badgeImage}
-                        alt={`Badge ${slot + 1}`}
-                        width={84}
-                        height={84}
-                        style={{
-                          width: "100%",
-                          height: "auto",
-                          maxHeight: mobile ? "74px" : "86px",
-                          objectFit: "contain",
-                        }}
-                      />
-                    ) : (
-                      <span
-                        aria-hidden
-                        style={{
-                          width: "11px",
-                          height: "11px",
-                          borderRadius: "999px",
-                          background: "rgba(255,255,255,0.28)",
-                        display: "inline-block",
-                      }}
-                    />
-                    )}
-                    <AnimatePresence>
-                      {activeBadgeTip?.slot === slot && (
-                        <motion.span
-                          initial={{ opacity: 0, y: 4, scale: 0.98 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: 3, scale: 0.99 }}
-                          transition={{ duration: 0.16, ease: "easeOut" }}
-                          style={{
-                            position: "fixed",
-                            top: activeBadgeTip.y,
-                            left: activeBadgeTip.x,
-                            transform: "translate(-50%, -50%)",
-                            whiteSpace: "nowrap",
-                            fontSize: "0.56rem",
-                            lineHeight: 1.1,
-                            color: "#f1f1f1",
-                            background: "rgba(7, 7, 8, 0.74)",
-                            border: "1px solid rgba(255,255,255,0.16)",
-                            borderRadius: "999px",
-                            padding: "0.24rem 0.4rem",
-                            pointerEvents: "none",
-                            zIndex: 320,
-                            fontWeight: 400,
-                          }}
-                        >
-                          {BADGE_TIP_TEXT[slot]}
-                        </motion.span>
-                      )}
-                    </AnimatePresence>
-                  </motion.button>
-                );
-              })}
-            </div>
-
-            {badgeCount < 3 ? (
-              <p
-                style={{
-                  fontSize: mobile ? "0.95rem" : "1rem",
-                  lineHeight: 1.3,
-                  opacity: 0.8,
-                  textAlign: "center",
-                }}
-              >
-                you&apos;ve collected {badgeCount}/3 badges. collect 3 to win a
-                small prize :)
-              </p>
-            ) : (
-              <p
-                style={{
-                  fontSize: mobile ? "0.95rem" : "1rem",
-                  lineHeight: 1.3,
-                  opacity: 0.8,
-                  textAlign: "center",
-                }}
-              >
-                thank you!! show this to our team and collect a small prize (if
-                theres any left...)
-              </p>
-            )}
-            <p
-              style={{
-                fontSize: mobile ? "0.66rem" : "0.68rem",
-                lineHeight: 1.2,
-                opacity: 0.52,
-                textAlign: "center",
-                marginTop: "0.42rem",
-              }}
-            >
-              (try refreshing the page...)
-            </p>
+                    you&apos;ve collected {badgeCount}/3 badges. collect 3 to win a
+                    small prize :)
+                  </p>
+                ) : (
+                  <p
+                    style={{
+                      fontSize: mobile ? "0.95rem" : "1rem",
+                      lineHeight: 1.3,
+                      opacity: 0.8,
+                      textAlign: "center",
+                    }}
+                  >
+                    thank you!! show this to our team and collect a small prize (if
+                    theres any left...)
+                  </p>
+                )}
+                <p
+                  style={{
+                    fontSize: mobile ? "0.66rem" : "0.68rem",
+                    lineHeight: 1.2,
+                    opacity: 0.52,
+                    textAlign: "center",
+                    marginTop: "0.42rem",
+                  }}
+                >
+                  (try refreshing the page...)
+                </p>
               </div>
             </motion.div>
           </>
