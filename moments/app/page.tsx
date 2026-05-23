@@ -1,12 +1,16 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
-import Image from "next/image";
-import { motion, useScroll, useTransform, MotionValue } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
+import {
+  motion,
+  useMotionTemplate,
+  useScroll,
+  useTransform,
+  MotionValue,
+} from "framer-motion";
 import dynamic from "next/dynamic";
 import SlideSection from "./components/SlideSection";
 
-// Dynamic import — Three.js needs browser APIs
 const PhoneScene = dynamic(() => import("./components/PhoneScene"), {
   ssr: false,
   loading: () => (
@@ -29,12 +33,11 @@ const PhoneScene = dynamic(() => import("./components/PhoneScene"), {
           animation: "spin 1s linear infinite",
         }}
       />
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <style>{"@keyframes spin { to { transform: rotate(360deg); } }"}</style>
     </div>
   ),
 });
 
-// Slide filenames in order
 const SLIDES = [
   "Slide 16_9 - 1.png",
   "Slide 16_9 - 2.png",
@@ -63,25 +66,35 @@ const SLIDES = [
   "Slide 16_9 - 27.png",
 ];
 
-/** Hook: read a MotionValue as React state */
+const INTRO_VIDEO_URL = "https://www.youtube.com/watch?v=apK5kau4vqA";
+
 function useMotionValueState(mv: MotionValue<number>): number {
-  const [val, setVal] = useState<number>(mv.get());
+  const [value, setValue] = useState<number>(mv.get());
+
   useEffect(() => {
-    const unsub = mv.on("change", setVal);
-    return unsub;
+    const unsubscribe = mv.on("change", setValue);
+    return unsubscribe;
   }, [mv]);
-  return val;
+
+  return value;
 }
 
-/** Hook: detect mobile viewport */
 function useIsMobile(breakpoint = 768): boolean {
   const [isMobile, setIsMobile] = useState(false);
+
   useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < breakpoint);
+    const check = () => {
+      const forceMobilePreview = new URLSearchParams(window.location.search).get(
+        "mobile"
+      ) === "1";
+      setIsMobile(window.innerWidth < breakpoint || forceMobilePreview);
+    };
     check();
     window.addEventListener("resize", check);
+
     return () => window.removeEventListener("resize", check);
   }, [breakpoint]);
+
   return isMobile;
 }
 
@@ -94,68 +107,135 @@ export default function Home() {
     offset: ["start start", "end end"],
   });
 
-  // Phone rotation: 0 (back/camera side) → π (front/screen side)
   const phoneRotation = useTransform(
     scrollYProgress,
     [0, 0.04, 0.15, 1],
     [0, 0, Math.PI, Math.PI]
   );
 
-  // Header fade-out
-  const headerOpacity = useTransform(scrollYProgress, [0, 0.05], [1, 0]);
-  const headerScale = useTransform(scrollYProgress, [0, 0.05], [1, 0.95]);
+  const heroHeight = useTransform(scrollYProgress, [0, 0.06], ["100vh", "9vh"]);
+  const heroBottomRadius = useTransform(scrollYProgress, [0, 0.06], [0, 108]);
+  const heroShadowStrength = useTransform(scrollYProgress, [0, 0.06], [0, 0.58]);
+  const heroShadow = useMotionTemplate`0 14px 40px rgba(0, 0, 0, ${heroShadowStrength})`;
 
   return (
     <div ref={pageRef} style={{ background: "#000", minHeight: "100vh" }}>
-      {/* ============= HEADER SECTION ============= */}
       <motion.section
         style={{
-          height: "100vh",
+          height: heroHeight,
           width: "100%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          position: "relative",
+          position: "sticky",
+          top: 0,
+          zIndex: 50,
           overflow: "hidden",
-          opacity: headerOpacity,
-          scale: headerScale,
+          borderBottomLeftRadius: heroBottomRadius,
+          borderBottomRightRadius: heroBottomRadius,
+          boxShadow: heroShadow,
         }}
       >
-        <Image
-          src="/Team_1_Header.png"
-          alt="Instagram Moments — A collaborative video gallery and editor"
-          fill
-          priority
-          style={{ objectFit: "contain" }}
-        />
+        <IntroVideoEmbed />
       </motion.section>
 
-      {/* ============= MOBILE LAYOUT ============= */}
       {isMobile ? (
-        <MobileLayout
-          scrollYProgress={scrollYProgress}
-          phoneRotation={phoneRotation}
-        />
+        <MobileLayout phoneRotation={phoneRotation} />
       ) : (
-        <DesktopLayout
-          scrollYProgress={scrollYProgress}
-          phoneRotation={phoneRotation}
-        />
+        <DesktopLayout phoneRotation={phoneRotation} />
       )}
+
+      {!isMobile && <LandingFooter />}
     </div>
   );
 }
 
-/* ──────────────────────────────────────────────────
-   DESKTOP — two-column: slides left, sticky phone right
-   ────────────────────────────────────────────────── */
-function DesktopLayout({
-  scrollYProgress,
-  phoneRotation,
-}: {
-  scrollYProgress: MotionValue<number>;
-  phoneRotation: MotionValue<number>;
-}) {
+function IntroVideoEmbed() {
+  const [isHovering, setIsHovering] = useState(false);
+  const [hasMousePointer, setHasMousePointer] = useState(false);
+  const cursorPopRef = useRef<HTMLSpanElement>(null);
+  const cursorTargetRef = useRef({ x: 20, y: 20 });
+  const cursorRafRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mql = window.matchMedia("(hover: hover) and (pointer: fine)");
+    const update = () => setHasMousePointer(mql.matches);
+    update();
+    mql.addEventListener("change", update);
+    return () => mql.removeEventListener("change", update);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (cursorRafRef.current !== null) {
+        window.cancelAnimationFrame(cursorRafRef.current);
+      }
+    };
+  }, []);
+
+  const updateCursorPop = () => {
+    cursorRafRef.current = null;
+    const el = cursorPopRef.current;
+    if (!el) return;
+    const { x, y } = cursorTargetRef.current;
+    el.style.transform = `translate3d(${x + 8}px, ${y - 16}px, 0)`;
+  };
+
+  return (
+    <a
+      className="intro-video-link"
+      href={INTRO_VIDEO_URL}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Watch full intro video on YouTube"
+      onPointerEnter={(event) => {
+        if (event.pointerType === "mouse") setIsHovering(true);
+      }}
+      onPointerLeave={() => setIsHovering(false)}
+      onPointerMove={(event) => {
+        if (event.pointerType !== "mouse") return;
+        const rect = event.currentTarget.getBoundingClientRect();
+        cursorTargetRef.current = {
+          x: event.clientX - rect.left,
+          y: event.clientY - rect.top,
+        };
+        if (cursorRafRef.current === null) {
+          cursorRafRef.current = window.requestAnimationFrame(updateCursorPop);
+        }
+      }}
+      style={{
+        width: "100%",
+        height: "100%",
+      }}
+    >
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        preload="metadata"
+        poster="/videos/image.png"
+        style={{
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          display: "block",
+        }}
+      >
+        <source src="/videos/Intro 1.mp4" type="video/mp4" />
+      </video>
+      {hasMousePointer && isHovering && (
+        <span
+          ref={cursorPopRef}
+          className="intro-video-cursor-pop"
+        >
+          open on youtube
+        </span>
+      )}
+      {!hasMousePointer && <span className="intro-video-static-pop">tap to open</span>}
+    </a>
+  );
+}
+
+function DesktopLayout({ phoneRotation }: { phoneRotation: MotionValue<number> }) {
   return (
     <section
       style={{
@@ -166,7 +246,6 @@ function DesktopLayout({
         position: "relative",
       }}
     >
-      {/* LEFT — Slides */}
       <div
         style={{
           flex: "0 0 58%",
@@ -177,12 +256,11 @@ function DesktopLayout({
           gap: "4vh",
         }}
       >
-        {SLIDES.map((f, i) => (
-          <SlideSection key={f} src={`/Slides/${f}`} index={i} />
+        {SLIDES.map((fileName, index) => (
+          <SlideSection key={fileName} src={`/Slides/${fileName}`} index={index} />
         ))}
       </div>
 
-      {/* RIGHT — Sticky 3D Phone */}
       <div
         style={{
           flex: "0 0 42%",
@@ -221,19 +299,9 @@ function DesktopPhoneWrapper({
   );
 }
 
-/* ──────────────────────────────────────────────────
-   MOBILE — stacked: phone (interactive) then slides
-   ────────────────────────────────────────────────── */
-function MobileLayout({
-  scrollYProgress,
-  phoneRotation,
-}: {
-  scrollYProgress: MotionValue<number>;
-  phoneRotation: MotionValue<number>;
-}) {
+function MobileLayout({ phoneRotation }: { phoneRotation: MotionValue<number> }) {
   return (
     <>
-      {/* 3D Phone — interactive / draggable */}
       <section
         style={{
           width: "100%",
@@ -245,7 +313,6 @@ function MobileLayout({
           justifyContent: "center",
         }}
       >
-        {/* Drag hint */}
         <motion.p
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -260,7 +327,7 @@ function MobileLayout({
             pointerEvents: "none",
           }}
         >
-          ↔ Drag to rotate
+          Drag to rotate
         </motion.p>
 
         <div style={{ width: "100%", height: "100%" }}>
@@ -268,20 +335,50 @@ function MobileLayout({
         </div>
       </section>
 
-      {/* Slides — full width, stacked */}
       <section
         style={{
           width: "100%",
-          padding: "4vh 4vw 12vh 4vw",
-          display: "flex",
-          flexDirection: "column",
-          gap: "3vh",
+          height: "20px",
+          position: "relative",
+          overflow: "hidden",
         }}
       >
-        {SLIDES.map((f, i) => (
-          <SlideSection key={f} src={`/Slides/${f}`} index={i} />
-        ))}
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="metadata"
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            display: "block",
+          }}
+        >
+          <source src="/videos/Gradient.mp4" type="video/mp4" />
+        </video>
       </section>
+
+      <div style={{ position: "relative", background: "#000" }}>
+        <GradientSideRail />
+
+        <section
+          style={{
+            width: "100%",
+            padding: "4vh 4vw 0 calc(4vw + 16px)",
+            display: "flex",
+            flexDirection: "column",
+            gap: "3vh",
+          }}
+        >
+          {SLIDES.map((fileName, index) => (
+            <SlideSection key={fileName} src={`/Slides/${fileName}`} index={index} />
+          ))}
+        </section>
+
+        <LandingFooter mobile />
+      </div>
     </>
   );
 }
@@ -292,8 +389,167 @@ function MobilePhoneWrapper({
   phoneRotation: MotionValue<number>;
 }) {
   const rotation = useMotionValueState(phoneRotation);
+  return <PhoneScene rotationY={rotation} interactive={true} />;
+}
 
+function GradientSideRail() {
   return (
-    <PhoneScene rotationY={rotation} interactive={true} />
+    <div
+      style={{
+        position: "absolute",
+        top: 0,
+        bottom: 0,
+        left: 0,
+        width: "12px",
+        overflow: "hidden",
+        pointerEvents: "none",
+        zIndex: 2,
+      }}
+    >
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        preload="metadata"
+        style={{
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          display: "block",
+        }}
+      >
+        <source src="/videos/Gradient.mp4" type="video/mp4" />
+      </video>
+    </div>
+  );
+}
+
+function LandingFooter({ mobile = false }: { mobile?: boolean }) {
+  return (
+    <footer
+      style={{
+        position: "relative",
+        marginTop: mobile ? "6vh" : "8vh",
+        minHeight: mobile ? "92px" : "68px",
+        display: "flex",
+        alignItems: "flex-end",
+        overflow: "hidden",
+        borderTopLeftRadius: mobile ? "20px" : "24px",
+        borderTopRightRadius: mobile ? "20px" : "24px",
+      }}
+    >
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        preload="metadata"
+        style={{
+          position: "absolute",
+          inset: 0,
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+        }}
+      >
+        <source src="/videos/Gradient.mp4" type="video/mp4" />
+      </video>
+
+      <section
+        style={{
+          position: "absolute",
+          inset: 0,
+          background: "rgba(0, 0, 0, 0.22)",
+        }}
+      />
+
+      <div
+        style={{
+          position: "relative",
+          zIndex: 1,
+          width: "100%",
+          margin: 0,
+          padding: mobile
+            ? "0.75rem 6vw 0.85rem calc(6vw + 16px)"
+            : "0.7rem 1rem 0.75rem 1rem",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "0.3rem",
+          color: "#fff",
+          lineHeight: 1.25,
+          fontSize: mobile ? "0.8rem" : "0.9rem",
+          textAlign: "center",
+          fontWeight: 500,
+        }}
+      >
+        <p style={{ fontWeight: 650 }}>
+          Woah! You found our super secret footer.
+        </p>
+        <p style={{ opacity: 0.95 }}>
+          thanks for visiting our project. show this to the booth team for
+          something cool (if they still have some...sorry :&apos;&lt; )
+        </p>
+        <p style={{ opacity: 0.92 }}>
+          a Project by &apos;4vibes&apos; (
+          <a
+            href="https://evelynyu.framer.website/"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ textDecoration: "underline", marginLeft: "0.2rem" }}
+          >
+            Evelyn Yu
+          </a>
+          , Alyssa Yang,
+          <a
+            href="https://danielshi.ca/"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ textDecoration: "underline", marginLeft: "0.2rem" }}
+          >
+            Daniel Shi
+          </a>
+          ,
+          <a
+            href="https://joho.studio/"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ textDecoration: "underline", marginLeft: "0.2rem" }}
+          >
+            Johnny Ho
+          </a>
+          ) for
+          <a
+            href="https://www.sparkjam.design/"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ textDecoration: "underline", marginLeft: "0.2rem" }}
+          >
+            SparkJam 2026
+          </a>
+          . thank u to all sparkjam staff, big shoutout to
+          <a
+            href="https://keyaanvegdani.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ textDecoration: "underline", marginLeft: "0.2rem" }}
+          >
+            keyaan
+          </a>
+          and
+          <a
+            href="https://www.jadenlee.ca/"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ textDecoration: "underline", marginLeft: "0.2rem" }}
+          >
+            jaden
+          </a>
+          for making us lock tf in :)
+        </p>
+      </div>
+    </footer>
   );
 }

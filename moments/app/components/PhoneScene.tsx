@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { Canvas } from "@react-three/fiber";
 import {
   Environment,
+  Lightformer,
   ContactShadows,
   OrbitControls,
   Bounds,
@@ -53,9 +54,23 @@ export default function PhoneScene({
         <directionalLight position={[5, 5, 5]} intensity={1.4} />
         <directionalLight position={[-3, 3, -3]} intensity={0.6} />
         <pointLight position={[0, 2, 3]} intensity={0.8} color="#ffffff" />
+        <hemisphereLight args={["#ffffff", "#3a3a3a", 0.9]} />
 
-        {/* Environment for realistic reflections */}
-        <Environment preset="city" />
+        {/* Local environment lights (no remote HDR fetch). */}
+        <Environment resolution={128}>
+          <Lightformer
+            intensity={2}
+            color="#ffffff"
+            position={[3, 2, 4]}
+            scale={[2, 2, 1]}
+          />
+          <Lightformer
+            intensity={1.5}
+            color="#f5f5f5"
+            position={[-3, 1, -4]}
+            scale={[3, 3, 1]}
+          />
+        </Environment>
 
         {/* Subtle ground shadow */}
         <ContactShadows

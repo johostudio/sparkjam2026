@@ -1,8 +1,8 @@
 "use client";
 
-import { useRef, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useGLTF } from "@react-three/drei";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
 const MODEL_PATH = "/iphone-15-model/scene.gltf";
@@ -19,31 +19,29 @@ export default function PhoneModel({
   enableOrbitOverride = false,
 }: PhoneModelProps) {
   const groupRef = useRef<THREE.Group>(null);
+  const screenMaterialRef = useRef<THREE.MeshStandardMaterial | null>(null);
+  const videoTextureRef = useRef<THREE.VideoTexture | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const { scene } = useGLTF(MODEL_PATH);
   const clonedScene = useMemo(() => scene.clone(true), [scene]);
-  const { gl } = useThree();
 
-  // Store screen material ref
-  const screenMaterialRef = useRef<THREE.MeshStandardMaterial | null>(null);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const videoTextureRef = useRef<THREE.VideoTexture | null>(null);
-
-  // Find screen mesh
   useEffect(() => {
     clonedScene.traverse((child) => {
       if (child instanceof THREE.Mesh && child.name === "BasePhone_Screen_0") {
-        screenMaterialRef.current =
-          child.material as THREE.MeshStandardMaterial;
+        const material = Array.isArray(child.material)
+          ? child.material[0]
+          : child.material;
+        if (material instanceof THREE.MeshStandardMaterial) {
+          screenMaterialRef.current = material;
+        }
       }
     });
   }, [clonedScene]);
 
-  // Create video element and apply as texture to the screen
   useEffect(() => {
-    const mat = screenMaterialRef.current;
-    if (!mat) return;
+    const screenMaterial = screenMaterialRef.current;
+    if (!screenMaterial) return;
 
-    // Create a hidden video element
     const video = document.createElement("video");
     video.src = VIDEO_PATH;
     video.crossOrigin = "anonymous";
@@ -51,49 +49,41 @@ export default function PhoneModel({
     video.muted = true;
     video.playsInline = true;
     video.autoplay = true;
+    video.setAttribute("playsinline", "");
+    video.setAttribute("webkit-playsinline", "");
     videoRef.current = video;
 
-    // Start playing
     video.play().catch((err) => {
-      if (err.name === "AbortError") return; // Expected when unmounting quickly
-      console.warn("[PhoneModel] Video autoplay blocked:", err);
+      console.warn("[PhoneModel] Video autoplay deferred:", err);
     });
 
-    // Create a VideoTexture from the video element
-    const videoTexture = new THREE.VideoTexture(video);
-    videoTexture.flipY = false; // GLTF convention
-    videoTexture.colorSpace = THREE.SRGBColorSpace;
-    videoTexture.minFilter = THREE.LinearFilter;
-    videoTexture.magFilter = THREE.LinearFilter;
-    
-    // Zoom out more (1.3 means 30% more video area visible, preventing cut-off)
-    const zoom = 1.4; 
-    
-    // By setting the center to 0.5, 0.5, repeat scaling happens from the center of the texture
-    videoTexture.center.set(0.5, 0.5);
-    
-    // Fix mirroring (flip X) and upside-down (flip Y), and apply zoom
-    videoTexture.repeat.set(zoom, -zoom);
-    
-    // Prevent the video from repeating in the zoomed-out margins
-    videoTexture.wrapS = THREE.ClampToEdgeWrapping;
-    videoTexture.wrapT = THREE.ClampToEdgeWrapping;
-    
-    videoTextureRef.current = videoTexture;
+    const texture = new THREE.VideoTexture(video);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.minFilter = THREE.LinearFilter;
+    texture.magFilter = THREE.LinearFilter;
+    texture.flipY = false;
+    texture.wrapS = THREE.ClampToEdgeWrapping;
+    texture.wrapT = THREE.ClampToEdgeWrapping;
+    texture.center.set(0.5, 0.5);
+    texture.repeat.set(1.4, -1.4);
+    videoTextureRef.current = texture;
 
-    // Apply to screen material
-    mat.map = videoTexture;
-    mat.emissiveMap = videoTexture;
-    mat.emissive = new THREE.Color(1, 1, 1);
-    mat.emissiveIntensity = 1;
-    mat.needsUpdate = true;
+    screenMaterial.map = texture;
+    screenMaterial.emissiveMap = texture;
+    screenMaterial.emissive = new THREE.Color(1, 1, 1);
+    screenMaterial.emissiveIntensity = 1.05;
+    screenMaterial.needsUpdate = true;
 
     return () => {
-      video.pause();
-      video.src = "";
-      videoTexture.dispose();
+      if (videoRef.current) {
+        videoRef.current.pause();
+        videoRef.current.src = "";
+      }
+      if (videoTextureRef.current) {
+        videoTextureRef.current.dispose();
+      }
     };
-  }, [clonedScene]); // depend on clonedScene since screenMaterialRef is set from it
+  }, []);
 
   // Smooth rotation + floating bob
   useFrame(() => {
