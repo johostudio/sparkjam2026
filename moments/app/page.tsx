@@ -866,7 +866,7 @@ function LandingFooter({ mobile = false }: { mobile?: boolean }) {
           }}
         >
           <p style={{ fontWeight: 700 }}>
-            Woah! You found our super secret footer.
+            woah! you made it to the bottom :)
           </p>
           <p style={{ opacity: 0.92 }}>
             a Project by &apos;4vibes&apos; (
