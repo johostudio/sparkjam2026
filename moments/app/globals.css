@@ -1,5 +1,21 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "Instagram Sans";
+  src: url("/fonts/Instagram Sans.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Instagram Sans";
+  src: url("/fonts/Instagram Sans Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --background: #000000;
   --foreground: #ededed;
@@ -27,6 +43,7 @@ body {
   background: #000000;
   color: var(--foreground);
   font-family: "Instagram Sans", "Segoe UI", Helvetica, Arial, sans-serif;
+  font-weight: 400;
   overflow-x: hidden;
 }
 
@@ -39,89 +56,46 @@ body {
   overflow: hidden;
 }
 
-.intro-video-cursor-pop {
-  position: absolute;
-  top: 0;
-  left: 0;
-  transform: translate3d(28px, 20px, 0);
-  pointer-events: none;
-  z-index: 3;
+.quick-link-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  white-space: nowrap;
-  padding: 0.3rem 0.55rem;
-  border-radius: 999px;
-  background: linear-gradient(
-    135deg,
-    #feda75 0%,
-    #fa7e1e 22%,
-    #d62976 50%,
-    #962fbf 75%,
-    #4f5bd5 100%
-  );
-  color: #ffffff;
-  font-size: 0.64rem;
-  font-weight: 650;
-  letter-spacing: 0.02em;
-  text-transform: lowercase;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.28);
-  opacity: 0.74;
-  will-change: transform, opacity;
-  animation: badgePulse 1.25s ease-in-out infinite;
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  min-height: 30px;
 }
 
-.intro-video-static-pop {
-  position: absolute;
-  right: 0.9rem;
-  bottom: 0.9rem;
-  z-index: 3;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+.quick-link-tip-card {
   white-space: nowrap;
-  padding: 0.4rem 0.7rem;
-  border-radius: 999px;
-  background: linear-gradient(
-    135deg,
-    #feda75 0%,
-    #fa7e1e 22%,
-    #d62976 50%,
-    #962fbf 75%,
-    #4f5bd5 100%
-  );
-  color: #ffffff;
-  font-size: 0.76rem;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  text-transform: lowercase;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
   pointer-events: none;
+  z-index: 260;
+  font-family: "Instagram Sans", "Segoe UI", Helvetica, Arial, sans-serif;
+  color: #111111;
+  background: rgba(242, 242, 243, 0.58);
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  border-radius: 9px;
+  padding: 0.22rem 0.34rem;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.14);
+  display: flex;
+  flex-direction: column;
+  gap: 0.03rem;
 }
 
-@keyframes badgePulse {
-  0% {
-    opacity: 0.64;
-    filter: saturate(0.95);
-  }
-  50% {
-    opacity: 0.8;
-    filter: saturate(1.1);
-  }
-  100% {
-    opacity: 0.64;
-    filter: saturate(0.95);
-  }
+.quick-link-tip-title {
+  font-size: 0.53rem;
+  line-height: 1.1;
+  text-transform: lowercase;
+  font-weight: 600;
+  color: #111;
+  white-space: nowrap;
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .intro-video-link {
-    cursor: pointer;
-  }
-
-  .intro-video-static-pop {
-    display: none;
-  }
+.quick-link-tip-sub {
+  font-size: 0.52rem;
+  line-height: 1.15;
+  color: rgba(45, 45, 45, 0.86);
+  white-space: nowrap;
 }
 
 ::-webkit-scrollbar {

@@ -2,6 +2,7 @@
 
 import { Suspense } from "react";
 import { Canvas } from "@react-three/fiber";
+import type { MotionValue } from "framer-motion";
 import {
   Environment,
   Lightformer,
@@ -13,7 +14,7 @@ import {
 import PhoneModel from "./PhoneModel";
 
 interface PhoneSceneProps {
-  rotationY: number;
+  rotationY: number | MotionValue<number>;
   /** Enable drag-to-rotate on mobile */
   interactive?: boolean;
 }

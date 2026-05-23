@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
+import type { MotionValue } from "framer-motion";
 import { useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
@@ -9,7 +10,7 @@ const MODEL_PATH = "/iphone-15-model/scene.gltf";
 const VIDEO_PATH = "/connecting-friends.mp4";
 
 interface PhoneModelProps {
-  rotationY: number;
+  rotationY: number | MotionValue<number>;
   /** If true, skip the auto-rotation lerp (user is dragging) */
   enableOrbitOverride?: boolean;
 }
@@ -88,11 +89,13 @@ export default function PhoneModel({
   // Smooth rotation + floating bob
   useFrame(() => {
     if (!groupRef.current) return;
+    const targetRotation =
+      typeof rotationY === "number" ? rotationY : rotationY.get();
 
     if (!enableOrbitOverride) {
       groupRef.current.rotation.y = THREE.MathUtils.lerp(
         groupRef.current.rotation.y,
-        rotationY,
+        targetRotation,
         0.06
       );
     }

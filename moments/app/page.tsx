@@ -1,14 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import {
-  motion,
-  useMotionTemplate,
-  useScroll,
-  useTransform,
-  MotionValue,
-} from "framer-motion";
+  useEffect,
+  useRef,
+  useState,
+  type FocusEvent,
+  type MouseEvent,
+  type TouchEvent,
+} from "react";
+import { AnimatePresence, motion, useScroll, useTransform, MotionValue } from "framer-motion";
 import dynamic from "next/dynamic";
+import Image from "next/image";
 import SlideSection from "./components/SlideSection";
 
 const PhoneScene = dynamic(() => import("./components/PhoneScene"), {
@@ -46,8 +48,10 @@ const SLIDES = [
   "Slide 16_9 - 5.png",
   "Slide 16_9 - 6.png",
   "Slide 16_9 - 7.png",
+  "Slide 16_9 - 8.png",
   "Slide 16_9 - 9.png",
   "Slide 16_9 - 10.png",
+  "Slide 16_9 - 11.png",
   "Slide 16_9 - 12.png",
   "Slide 16_9 - 13.png",
   "Slide 16_9 - 14.png",
@@ -61,23 +65,22 @@ const SLIDES = [
   "Slide 16_9 - 22.png",
   "Slide 16_9 - 23.png",
   "Slide 16_9 - 24.png",
-  "Slide 16_9 - 25.png",
-  "Slide 16_9 - 26.png",
-  "Slide 16_9 - 27.png",
-];
+] as const;
 
 const INTRO_VIDEO_URL = "https://www.youtube.com/watch?v=apK5kau4vqA";
-
-function useMotionValueState(mv: MotionValue<number>): number {
-  const [value, setValue] = useState<number>(mv.get());
-
-  useEffect(() => {
-    const unsubscribe = mv.on("change", setValue);
-    return unsubscribe;
-  }, [mv]);
-
-  return value;
-}
+const FIGMA_PROTO_URL =
+  "https://www.figma.com/proto/w0BrBbqlmgZwMhzdMNOleB/Revision--test-?node-id=2079-3140&t=qprsDXmkDsqGSE2F-1";
+const PROJECT_PAGE_URL = "https://portal.sfusurge.com/projects";
+const BADGE_IMAGES = [
+  "/videos/image 3.png",
+  "/videos/image 4.png",
+  "/videos/image 5.png",
+] as const;
+const BADGE_TIP_TEXT = [
+  "first badge!",
+  "one more to go...",
+  "thats all of them :)",
+] as const;
 
 function useIsMobile(breakpoint = 768): boolean {
   const [isMobile, setIsMobile] = useState(false);
@@ -101,11 +104,24 @@ function useIsMobile(breakpoint = 768): boolean {
 export default function Home() {
   const pageRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
+  const showSlideDebug = false;
+  const { scrollY } = useScroll();
 
   const { scrollYProgress } = useScroll({
     target: pageRef,
     offset: ["start start", "end end"],
   });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const previousRestoration = window.history.scrollRestoration;
+    window.history.scrollRestoration = "manual";
+    window.scrollTo({ top: 0, behavior: "auto" });
+
+    return () => {
+      window.history.scrollRestoration = previousRestoration;
+    };
+  }, []);
 
   const phoneRotation = useTransform(
     scrollYProgress,
@@ -113,33 +129,79 @@ export default function Home() {
     [0, 0, Math.PI, Math.PI]
   );
 
-  const heroHeight = useTransform(scrollYProgress, [0, 0.06], ["100vh", "9vh"]);
-  const heroBottomRadius = useTransform(scrollYProgress, [0, 0.06], [0, 108]);
-  const heroShadowStrength = useTransform(scrollYProgress, [0, 0.06], [0, 0.58]);
-  const heroShadow = useMotionTemplate`0 14px 40px rgba(0, 0, 0, ${heroShadowStrength})`;
+  const curlDistance = isMobile ? 1240 : 980;
+  const curledHeightVh = isMobile ? 12 : 9;
+  const blockerBase = isMobile ? 1960 : 2120;
+  const mobileSpacerReleaseDistance = 960;
+  const rawCurlProgress = useTransform(scrollY, [0, curlDistance], [0, 1], {
+    clamp: true,
+  });
+  const curlProgress = rawCurlProgress;
+
+  const heroHeight = useTransform(
+    curlProgress,
+    (value) => `${100 - (100 - curledHeightVh) * value}vh`
+  );
+  const heroRadius = useTransform(curlProgress, [0, 1], [0, isMobile ? 132 : 172]);
+  const heroShadow = useTransform(
+    curlProgress,
+    (value) =>
+      `0 ${Math.round(8 + 22 * value)}px ${Math.round(20 + 34 * value)}px rgba(0, 0, 0, ${(0.16 + value * 0.45).toFixed(3)})`
+  );
+  const rawBlockerHeight = useTransform(scrollY, (value) => {
+    if (!isMobile) {
+      const desktopProgress = Math.min(1, Math.max(0, value / curlDistance));
+      return Math.max(0, blockerBase * (1 - desktopProgress));
+    }
+
+    if (value <= curlDistance) {
+      return blockerBase;
+    }
+
+    const t = Math.min(
+      1,
+      Math.max(0, (value - curlDistance) / mobileSpacerReleaseDistance)
+    );
+    const eased = t * t * (3 - 2 * t);
+    return Math.max(0, blockerBase * (1 - eased));
+  });
+
+  const blockerHeightPx = useTransform(rawBlockerHeight, (value) => `${value}px`);
 
   return (
     <div ref={pageRef} style={{ background: "#000", minHeight: "100vh" }}>
       <motion.section
         style={{
           height: heroHeight,
+          borderBottomLeftRadius: heroRadius,
+          borderBottomRightRadius: heroRadius,
+          boxShadow: heroShadow,
           width: "100%",
           position: "sticky",
           top: 0,
-          zIndex: 50,
+          zIndex: 70,
           overflow: "hidden",
-          borderBottomLeftRadius: heroBottomRadius,
-          borderBottomRightRadius: heroBottomRadius,
-          boxShadow: heroShadow,
+          willChange: "height, border-radius, box-shadow",
         }}
       >
         <IntroVideoEmbed />
+        <HeroQuickLinks mobile={isMobile} />
       </motion.section>
 
+      <motion.section
+        aria-hidden
+        style={{
+          height: blockerHeightPx,
+          width: "100%",
+          background: "#000",
+          willChange: "height",
+        }}
+      />
+
       {isMobile ? (
-        <MobileLayout phoneRotation={phoneRotation} />
+        <MobileLayout phoneRotation={phoneRotation} showSlideDebug={showSlideDebug} />
       ) : (
-        <DesktopLayout phoneRotation={phoneRotation} />
+        <DesktopLayout phoneRotation={phoneRotation} showSlideDebug={showSlideDebug} />
       )}
 
       {!isMobile && <LandingFooter />}
@@ -148,59 +210,9 @@ export default function Home() {
 }
 
 function IntroVideoEmbed() {
-  const [isHovering, setIsHovering] = useState(false);
-  const [hasMousePointer, setHasMousePointer] = useState(false);
-  const cursorPopRef = useRef<HTMLSpanElement>(null);
-  const cursorTargetRef = useRef({ x: 20, y: 20 });
-  const cursorRafRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const mql = window.matchMedia("(hover: hover) and (pointer: fine)");
-    const update = () => setHasMousePointer(mql.matches);
-    update();
-    mql.addEventListener("change", update);
-    return () => mql.removeEventListener("change", update);
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (cursorRafRef.current !== null) {
-        window.cancelAnimationFrame(cursorRafRef.current);
-      }
-    };
-  }, []);
-
-  const updateCursorPop = () => {
-    cursorRafRef.current = null;
-    const el = cursorPopRef.current;
-    if (!el) return;
-    const { x, y } = cursorTargetRef.current;
-    el.style.transform = `translate3d(${x + 8}px, ${y - 16}px, 0)`;
-  };
-
   return (
-    <a
+    <div
       className="intro-video-link"
-      href={INTRO_VIDEO_URL}
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label="Watch full intro video on YouTube"
-      onPointerEnter={(event) => {
-        if (event.pointerType === "mouse") setIsHovering(true);
-      }}
-      onPointerLeave={() => setIsHovering(false)}
-      onPointerMove={(event) => {
-        if (event.pointerType !== "mouse") return;
-        const rect = event.currentTarget.getBoundingClientRect();
-        cursorTargetRef.current = {
-          x: event.clientX - rect.left,
-          y: event.clientY - rect.top,
-        };
-        if (cursorRafRef.current === null) {
-          cursorRafRef.current = window.requestAnimationFrame(updateCursorPop);
-        }
-      }}
       style={{
         width: "100%",
         height: "100%",
@@ -222,20 +234,233 @@ function IntroVideoEmbed() {
       >
         <source src="/videos/Intro 1.mp4" type="video/mp4" />
       </video>
-      {hasMousePointer && isHovering && (
-        <span
-          ref={cursorPopRef}
-          className="intro-video-cursor-pop"
-        >
-          open on youtube
-        </span>
-      )}
-      {!hasMousePointer && <span className="intro-video-static-pop">tap to open</span>}
-    </a>
+    </div>
   );
 }
 
-function DesktopLayout({ phoneRotation }: { phoneRotation: MotionValue<number> }) {
+type QuickLinkTip = "youtube" | "figma" | "project";
+
+function HeroQuickLinks({ mobile }: { mobile: boolean }) {
+  const [activeTip, setActiveTip] = useState<{
+    key: QuickLinkTip;
+    x: number;
+    y: number;
+  } | null>(null);
+  const tipTimeoutRef = useRef<number | null>(null);
+  const iconSize = mobile ? 38 : 42;
+
+  useEffect(() => {
+    return () => {
+      if (tipTimeoutRef.current !== null) {
+        window.clearTimeout(tipTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const setTipAtPoint = (tip: QuickLinkTip, x: number, y: number) => {
+    setActiveTip({ key: tip, x, y });
+  };
+
+  const onIconMouseEnter = (
+    event: MouseEvent<HTMLAnchorElement>,
+    tip: QuickLinkTip
+  ) => {
+    setTipAtPoint(tip, event.clientX, event.clientY);
+  };
+
+  const onIconMouseMove = (
+    event: MouseEvent<HTMLAnchorElement>,
+    tip: QuickLinkTip
+  ) => {
+    if (activeTip?.key === tip) {
+      setTipAtPoint(tip, event.clientX, event.clientY);
+    }
+  };
+
+  const onIconFocus = (event: FocusEvent<HTMLAnchorElement>, tip: QuickLinkTip) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    setTipAtPoint(tip, rect.left + rect.width / 2, rect.top + rect.height / 2);
+  };
+
+  const hideTip = () => setActiveTip(null);
+
+  const onTouchPreview = (
+    event: TouchEvent<HTMLAnchorElement>,
+    tip: QuickLinkTip
+  ) => {
+    if (activeTip?.key !== tip) {
+      event.preventDefault();
+      const touch = event.touches[0];
+      setTipAtPoint(tip, touch.clientX, touch.clientY);
+      if (tipTimeoutRef.current !== null) {
+        window.clearTimeout(tipTimeoutRef.current);
+      }
+      tipTimeoutRef.current = window.setTimeout(() => {
+        setActiveTip(null);
+      }, 1100);
+    }
+  };
+
+  return (
+    <div
+      style={{
+        position: "absolute",
+        top: mobile ? "1.05rem" : "1.2rem",
+        left: "50%",
+        transform: "translateX(-50%)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: mobile ? "1.05rem" : "1.12rem",
+        zIndex: 140,
+      }}
+    >
+      <a
+        className="quick-link-icon"
+        href={FIGMA_PROTO_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Open Figma prototype"
+        onMouseEnter={(event) => onIconMouseEnter(event, "figma")}
+        onMouseMove={(event) => onIconMouseMove(event, "figma")}
+        onMouseLeave={hideTip}
+        onFocus={(event) => onIconFocus(event, "figma")}
+        onBlur={hideTip}
+        onTouchStart={(event) => onTouchPreview(event, "figma")}
+        style={{
+          width: `${iconSize}px`,
+          height: `${iconSize}px`,
+          color: "#fff",
+          opacity: 0.96,
+          position: "relative",
+          overflow: "visible",
+        }}
+      >
+        <FigmaIcon />
+      </a>
+      <a
+        className="quick-link-icon"
+        href={INTRO_VIDEO_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Open YouTube video"
+        onMouseEnter={(event) => onIconMouseEnter(event, "youtube")}
+        onMouseMove={(event) => onIconMouseMove(event, "youtube")}
+        onMouseLeave={hideTip}
+        onFocus={(event) => onIconFocus(event, "youtube")}
+        onBlur={hideTip}
+        onTouchStart={(event) => onTouchPreview(event, "youtube")}
+        style={{
+          width: `${iconSize}px`,
+          height: `${iconSize}px`,
+          color: "#fff",
+          opacity: 0.96,
+          position: "relative",
+          overflow: "visible",
+        }}
+      >
+        <YoutubeIcon />
+      </a>
+      <a
+        className="quick-link-icon"
+        href={PROJECT_PAGE_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Open project page"
+        onMouseEnter={(event) => onIconMouseEnter(event, "project")}
+        onMouseMove={(event) => onIconMouseMove(event, "project")}
+        onMouseLeave={hideTip}
+        onFocus={(event) => onIconFocus(event, "project")}
+        onBlur={hideTip}
+        onTouchStart={(event) => onTouchPreview(event, "project")}
+        style={{
+          width: `${iconSize}px`,
+          height: `${iconSize}px`,
+          color: "#fff",
+          opacity: 0.96,
+          position: "relative",
+          overflow: "visible",
+        }}
+      >
+        <Image
+          src="/videos/sfusurge.png"
+          alt="SFU Surge icon"
+          width={iconSize}
+          height={iconSize}
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "contain",
+            transform: "scale(2)",
+            transformOrigin: "center",
+          }}
+        />
+      </a>
+
+      <AnimatePresence>
+        {activeTip && (
+          <motion.span
+            key={activeTip.key}
+            className="quick-link-tip-card"
+            initial={{ opacity: 0, scale: 0.96, y: 4 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.97, y: 2 }}
+            transition={{ duration: 0.14, ease: "easeOut" }}
+            style={{
+              position: "fixed",
+              left: activeTip.x,
+              top: activeTip.y,
+              transform: "translate(-50%, -125%)",
+            }}
+          >
+            <span className="quick-link-tip-title">
+              {activeTip.key === "figma"
+                ? "figma"
+                : activeTip.key === "youtube"
+                  ? "youtube"
+                  : "project page"}
+            </span>
+            <span className="quick-link-tip-sub">
+              {activeTip.key === "figma"
+                ? "check out our prototype :)"
+                : activeTip.key === "youtube"
+                  ? "check out our demo :)"
+                  : "check out project page :)"}
+            </span>
+          </motion.span>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function YoutubeIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="100%" height="100%" fill="white">
+      <path d="M23.498 6.186a2.997 2.997 0 0 0-2.11-2.12C19.52 3.545 12 3.545 12 3.545s-7.52 0-9.388.52a2.997 2.997 0 0 0-2.11 2.12A31.866 31.866 0 0 0 0 12a31.866 31.866 0 0 0 .502 5.814 2.997 2.997 0 0 0 2.11 2.12c1.868.521 9.388.521 9.388.521s7.52 0 9.388-.52a2.997 2.997 0 0 0 2.11-2.12A31.866 31.866 0 0 0 24 12a31.866 31.866 0 0 0-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+    </svg>
+  );
+}
+
+function FigmaIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="100%" height="100%" fill="none">
+      <rect x="6.2" y="2.2" width="5.8" height="5.8" rx="2.9" fill="white" />
+      <rect x="6.2" y="8.2" width="5.8" height="5.8" rx="2.9" fill="white" />
+      <rect x="6.2" y="14.2" width="5.8" height="5.8" rx="2.9" fill="white" />
+      <rect x="12.2" y="2.2" width="5.8" height="5.8" rx="2.9" fill="white" />
+      <circle cx="15.1" cy="11.1" r="2.9" fill="white" />
+    </svg>
+  );
+}
+
+function DesktopLayout({
+  phoneRotation,
+  showSlideDebug,
+}: {
+  phoneRotation: MotionValue<number>;
+  showSlideDebug: boolean;
+}) {
   return (
     <section
       style={{
@@ -250,14 +475,19 @@ function DesktopLayout({ phoneRotation }: { phoneRotation: MotionValue<number> }
         style={{
           flex: "0 0 58%",
           width: "58%",
-          padding: "4vh 3vw 12vh 3vw",
+          padding: "8vh 3vw 12vh 3vw",
           display: "flex",
           flexDirection: "column",
           gap: "4vh",
         }}
       >
         {SLIDES.map((fileName, index) => (
-          <SlideSection key={fileName} src={`/Slides/${fileName}`} index={index} />
+          <SlideSection
+            key={fileName}
+            src={`/Slides/${fileName}`}
+            index={index}
+            showDebug={showSlideDebug}
+          />
         ))}
       </div>
 
@@ -290,23 +520,30 @@ function DesktopPhoneWrapper({
 }: {
   phoneRotation: MotionValue<number>;
 }) {
-  const rotation = useMotionValueState(phoneRotation);
-
   return (
     <div style={{ width: "100%", height: "80vh" }}>
-      <PhoneScene rotationY={rotation} interactive={false} />
+      <PhoneScene rotationY={phoneRotation} interactive={false} />
     </div>
   );
 }
 
-function MobileLayout({ phoneRotation }: { phoneRotation: MotionValue<number> }) {
+function MobileLayout({
+  phoneRotation,
+  showSlideDebug,
+}: {
+  phoneRotation: MotionValue<number>;
+  showSlideDebug: boolean;
+}) {
   return (
-    <>
+    <div style={{ position: "relative", background: "#000" }}>
+      <GradientSideRail />
+
       <section
         style={{
           width: "100%",
           height: "70vh",
           position: "relative",
+          zIndex: 1,
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
@@ -337,49 +574,27 @@ function MobileLayout({ phoneRotation }: { phoneRotation: MotionValue<number> })
 
       <section
         style={{
-          width: "100%",
-          height: "20px",
           position: "relative",
-          overflow: "hidden",
+          zIndex: 1,
+          width: "100%",
+          padding: "7vh 4vw 0 calc(4vw + 12px)",
+          display: "flex",
+          flexDirection: "column",
+          gap: "3vh",
         }}
       >
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          preload="metadata"
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            display: "block",
-          }}
-        >
-          <source src="/videos/Gradient.mp4" type="video/mp4" />
-        </video>
+        {SLIDES.map((fileName, index) => (
+          <SlideSection
+            key={fileName}
+            src={`/Slides/${fileName}`}
+            index={index}
+            showDebug={showSlideDebug}
+          />
+        ))}
       </section>
 
-      <div style={{ position: "relative", background: "#000" }}>
-        <GradientSideRail />
-
-        <section
-          style={{
-            width: "100%",
-            padding: "4vh 4vw 0 calc(4vw + 16px)",
-            display: "flex",
-            flexDirection: "column",
-            gap: "3vh",
-          }}
-        >
-          {SLIDES.map((fileName, index) => (
-            <SlideSection key={fileName} src={`/Slides/${fileName}`} index={index} />
-          ))}
-        </section>
-
-        <LandingFooter mobile />
-      </div>
-    </>
+      <LandingFooter mobile />
+    </div>
   );
 }
 
@@ -388,8 +603,7 @@ function MobilePhoneWrapper({
 }: {
   phoneRotation: MotionValue<number>;
 }) {
-  const rotation = useMotionValueState(phoneRotation);
-  return <PhoneScene rotationY={rotation} interactive={true} />;
+  return <PhoneScene rotationY={phoneRotation} interactive={true} />;
 }
 
 function GradientSideRail() {
@@ -400,10 +614,11 @@ function GradientSideRail() {
         top: 0,
         bottom: 0,
         left: 0,
-        width: "12px",
+        width: "7px",
         overflow: "hidden",
         pointerEvents: "none",
-        zIndex: 2,
+        zIndex: 6,
+        opacity: 0.78,
       }}
     >
       <video
@@ -426,17 +641,103 @@ function GradientSideRail() {
 }
 
 function LandingFooter({ mobile = false }: { mobile?: boolean }) {
+  const footerRef = useRef<HTMLElement>(null);
+  const footerSeenRef = useRef(false);
+  const [isBadgeOpen, setIsBadgeOpen] = useState(false);
+  const [badgeCount, setBadgeCount] = useState(0);
+  const [isIconPopping, setIsIconPopping] = useState(false);
+  const [activeBadgeTip, setActiveBadgeTip] = useState<{
+    slot: number;
+    x: number;
+    y: number;
+  } | null>(null);
+  const badgeTipTimeoutRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const storageKey = "sparkjam_badges_count_v1";
+    const sessionKey = "sparkjam_badges_visit_awarded_v1";
+    const stored = Number.parseInt(localStorage.getItem(storageKey) ?? "0", 10);
+    let nextCount = Number.isFinite(stored) ? stored : 0;
+    nextCount = Math.max(0, Math.min(3, nextCount));
+
+    if (!sessionStorage.getItem(sessionKey)) {
+      nextCount = Math.min(3, nextCount + 1);
+      localStorage.setItem(storageKey, String(nextCount));
+      sessionStorage.setItem(sessionKey, "1");
+    }
+
+    window.requestAnimationFrame(() => {
+      setBadgeCount(nextCount);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!footerRef.current || typeof window === "undefined") return;
+    const node = footerRef.current;
+
+    const triggerPop = () => {
+      setIsIconPopping(true);
+      window.setTimeout(() => setIsIconPopping(false), 900);
+    };
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && !footerSeenRef.current) {
+            footerSeenRef.current = true;
+            triggerPop();
+          }
+          if (!entry.isIntersecting) {
+            footerSeenRef.current = false;
+          }
+        });
+      },
+      { threshold: 0.05, rootMargin: "0px 0px -16% 0px" }
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (badgeTipTimeoutRef.current !== null) {
+        window.clearTimeout(badgeTipTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const setBadgeTipAtPoint = (slot: number, x: number, y: number) => {
+    setActiveBadgeTip({ slot, x, y });
+  };
+
+  const onBadgeTouchPreview = (event: TouchEvent<HTMLButtonElement>, slot: number) => {
+    const touch = event.touches[0];
+    setBadgeTipAtPoint(slot, touch.clientX, touch.clientY);
+    if (badgeTipTimeoutRef.current !== null) {
+      window.clearTimeout(badgeTipTimeoutRef.current);
+    }
+    badgeTipTimeoutRef.current = window.setTimeout(() => {
+      setActiveBadgeTip(null);
+    }, 1000);
+  };
+
   return (
     <footer
+      ref={footerRef}
       style={{
         position: "relative",
         marginTop: mobile ? "6vh" : "8vh",
         minHeight: mobile ? "92px" : "68px",
         display: "flex",
         alignItems: "flex-end",
-        overflow: "hidden",
+        overflow: "visible",
         borderTopLeftRadius: mobile ? "20px" : "24px",
         borderTopRightRadius: mobile ? "20px" : "24px",
+        zIndex: 60,
+        isolation: "isolate",
       }}
     >
       <video
@@ -451,6 +752,8 @@ function LandingFooter({ mobile = false }: { mobile?: boolean }) {
           width: "100%",
           height: "100%",
           objectFit: "cover",
+          borderTopLeftRadius: mobile ? "20px" : "24px",
+          borderTopRightRadius: mobile ? "20px" : "24px",
         }}
       >
         <source src="/videos/Gradient.mp4" type="video/mp4" />
@@ -461,6 +764,8 @@ function LandingFooter({ mobile = false }: { mobile?: boolean }) {
           position: "absolute",
           inset: 0,
           background: "rgba(0, 0, 0, 0.22)",
+          borderTopLeftRadius: mobile ? "20px" : "24px",
+          borderTopRightRadius: mobile ? "20px" : "24px",
         }}
       />
 
@@ -474,82 +779,324 @@ function LandingFooter({ mobile = false }: { mobile?: boolean }) {
             ? "0.75rem 6vw 0.85rem calc(6vw + 16px)"
             : "0.7rem 1rem 0.75rem 1rem",
           display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: "0.3rem",
+          flexDirection: "row",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          gap: "0.6rem",
           color: "#fff",
           lineHeight: 1.25,
-          fontSize: mobile ? "0.8rem" : "0.9rem",
-          textAlign: "center",
+          fontSize: mobile ? "0.78rem" : "0.88rem",
+          textAlign: "left",
           fontWeight: 500,
         }}
       >
-        <p style={{ fontWeight: 650 }}>
-          Woah! You found our super secret footer.
-        </p>
-        <p style={{ opacity: 0.95 }}>
-          thanks for visiting our project. show this to the booth team for
-          something cool (if they still have some...sorry :&apos;&lt; )
-        </p>
-        <p style={{ opacity: 0.92 }}>
-          a Project by &apos;4vibes&apos; (
-          <a
-            href="https://evelynyu.framer.website/"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ textDecoration: "underline", marginLeft: "0.2rem" }}
-          >
-            Evelyn Yu
-          </a>
-          , Alyssa Yang,
-          <a
-            href="https://danielshi.ca/"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ textDecoration: "underline", marginLeft: "0.2rem" }}
-          >
-            Daniel Shi
-          </a>
-          ,
-          <a
-            href="https://joho.studio/"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ textDecoration: "underline", marginLeft: "0.2rem" }}
-          >
-            Johnny Ho
-          </a>
-          ) for
-          <a
-            href="https://www.sparkjam.design/"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ textDecoration: "underline", marginLeft: "0.2rem" }}
-          >
-            SparkJam 2026
-          </a>
-          . thank u to all sparkjam staff, big shoutout to
-          <a
-            href="https://keyaanvegdani.com/"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ textDecoration: "underline", marginLeft: "0.2rem" }}
-          >
-            keyaan
-          </a>
-          and
-          <a
-            href="https://www.jadenlee.ca/"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ textDecoration: "underline", marginLeft: "0.2rem" }}
-          >
-            jaden
-          </a>
-          for making us lock tf in :)
-        </p>
+        <div
+          style={{
+            flex: 1,
+            minWidth: 0,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "flex-start",
+            gap: "0.22rem",
+          }}
+        >
+          <p style={{ fontWeight: 700 }}>
+            Woah! You found our super secret footer.
+          </p>
+          <p style={{ opacity: 0.92 }}>
+            a Project by &apos;4vibes&apos; (
+            <a
+              href="https://evelynyu.framer.website/"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ textDecoration: "underline", marginLeft: "0.2rem" }}
+            >
+              Evelyn Yu
+            </a>
+            , Alyssa Yang,
+            <a
+              href="https://danielshi.ca/"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ textDecoration: "underline", marginLeft: "0.2rem" }}
+            >
+              Daniel Shi
+            </a>
+            ,
+            <a
+              href="https://joho.studio/"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ textDecoration: "underline", marginLeft: "0.2rem" }}
+            >
+              Johnny Ho
+            </a>
+            ) for
+            <a
+              href="https://www.sparkjam.design/"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ textDecoration: "underline", marginLeft: "0.2rem" }}
+            >
+              SparkJam 2026
+            </a>
+            . thank u to all sparkjam staff, big shoutout to
+            <a
+              href="https://keyaanvegdani.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ textDecoration: "underline", marginLeft: "0.2rem" }}
+            >
+              keyaan
+            </a>
+            and
+            <a
+              href="https://www.jadenlee.ca/"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ textDecoration: "underline", marginLeft: "0.2rem" }}
+            >
+              jaden
+            </a>
+            for making us lock tf in :)
+          </p>
+        </div>
+
+        <motion.button
+          type="button"
+          whileHover={{ scale: 1.07, rotate: -6, y: -1 }}
+          whileTap={{ scale: 0.94 }}
+          animate={
+            isIconPopping
+              ? { scale: [1, 1.19, 1, 1.12, 1], rotate: [0, -8, 0, -4, 0], y: [0, -2, 0, -1, 0] }
+              : { scale: 1, rotate: 0, y: 0 }
+          }
+          transition={{ duration: 0.82, ease: "easeOut" }}
+          onClick={() => setIsBadgeOpen((prev) => !prev)}
+          onMouseEnter={() => setIsIconPopping(true)}
+          onMouseLeave={() => window.setTimeout(() => setIsIconPopping(false), 140)}
+          onTouchStart={() => setIsIconPopping(true)}
+          style={{
+            marginTop: "0.2rem",
+            width: mobile ? "44px" : "34px",
+            height: mobile ? "44px" : "34px",
+            border: "none",
+            background: "transparent",
+            cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 0,
+            alignSelf: mobile ? "center" : "flex-start",
+            marginLeft: mobile ? 0 : "auto",
+            flexShrink: 0,
+            zIndex: 80,
+            overflow: "visible",
+          }}
+          aria-label="Open badge collection"
+        >
+          <Image
+            src="/videos/Vector.png"
+            alt="Badge collection icon"
+            width={34}
+            height={34}
+            style={{ width: "100%", height: "100%", objectFit: "contain" }}
+          />
+        </motion.button>
       </div>
+
+      <AnimatePresence>
+        {isBadgeOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 12, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 8, scale: 0.98 }}
+            transition={{ duration: 0.24, ease: "easeOut" }}
+            style={{
+              position: mobile ? "fixed" : "absolute",
+              inset: mobile ? 0 : "auto",
+              left: mobile ? 0 : "auto",
+              right: mobile ? 0 : "1.1rem",
+              top: mobile ? 0 : "auto",
+              bottom: mobile ? 0 : "112px",
+              margin: mobile ? "auto" : 0,
+              height: mobile ? "fit-content" : "auto",
+              maxHeight: "none",
+              overflow: "hidden",
+              transform: "none",
+              width: mobile ? "min(92vw, 360px)" : "380px",
+              borderRadius: "20px",
+              border: "1px solid rgba(255,255,255,0.2)",
+              background: "rgba(0, 0, 0, 0.76)",
+              backdropFilter: "blur(7px)",
+              padding: mobile ? "1rem 0.9rem" : "1.05rem",
+              color: "#fff",
+              zIndex: 120,
+              fontFamily: '"Instagram Sans", "Segoe UI", Helvetica, Arial, sans-serif',
+            }}
+          >
+            <p
+              style={{
+                fontSize: mobile ? "1.04rem" : "1.12rem",
+                fontWeight: 700,
+                lineHeight: 1.1,
+                marginBottom: "0.3rem",
+                textAlign: "center",
+              }}
+            >
+              badge collection !
+            </p>
+            <p
+              style={{
+                fontSize: mobile ? "0.86rem" : "0.9rem",
+                lineHeight: 1.2,
+                color: "rgba(255,255,255,0.88)",
+                textAlign: "center",
+                marginBottom: "0.85rem",
+                fontWeight: 400,
+              }}
+            >
+              thanks for stopping by :)
+            </p>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+                gap: mobile ? "0.6rem" : "0.75rem",
+                marginBottom: "0.6rem",
+              }}
+            >
+              {BADGE_IMAGES.map((badgeImage, slot) => {
+                const unlocked = slot < badgeCount;
+                return (
+                  <motion.button
+                    key={slot}
+                    type="button"
+                    onMouseEnter={(event) =>
+                      setBadgeTipAtPoint(slot, event.clientX, event.clientY)
+                    }
+                    onMouseMove={(event) => {
+                      if (activeBadgeTip?.slot === slot) {
+                        setBadgeTipAtPoint(slot, event.clientX, event.clientY);
+                      }
+                    }}
+                    onMouseLeave={() => setActiveBadgeTip(null)}
+                    onTouchStart={(event) => onBadgeTouchPreview(event, slot)}
+                    whileHover={{ scale: 1.04, y: -1 }}
+                    whileTap={{ scale: 0.98 }}
+                    style={{
+                      position: "relative",
+                      minHeight: mobile ? "80px" : "96px",
+                      width: "100%",
+                      borderRadius: "14px",
+                      border: "1px solid rgba(255,255,255,0.2)",
+                      padding: "0.35rem",
+                      background: "rgba(255,255,255,0.06)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {unlocked ? (
+                      <Image
+                        src={badgeImage}
+                        alt={`Badge ${slot + 1}`}
+                        width={84}
+                        height={84}
+                        style={{
+                          width: "100%",
+                          height: "auto",
+                          maxHeight: mobile ? "74px" : "86px",
+                          objectFit: "contain",
+                        }}
+                      />
+                    ) : (
+                      <span
+                        aria-hidden
+                        style={{
+                          width: "11px",
+                          height: "11px",
+                          borderRadius: "999px",
+                          background: "rgba(255,255,255,0.28)",
+                        display: "inline-block",
+                      }}
+                    />
+                    )}
+                    <AnimatePresence>
+                      {activeBadgeTip?.slot === slot && (
+                        <motion.span
+                          initial={{ opacity: 0, y: 4, scale: 0.98 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 3, scale: 0.99 }}
+                          transition={{ duration: 0.16, ease: "easeOut" }}
+                          style={{
+                            position: "fixed",
+                            top: activeBadgeTip.y,
+                            left: activeBadgeTip.x,
+                            transform: "translate(-50%, -118%)",
+                            whiteSpace: "nowrap",
+                            fontSize: "0.56rem",
+                            lineHeight: 1.1,
+                            color: "#f1f1f1",
+                            background: "rgba(7, 7, 8, 0.74)",
+                            border: "1px solid rgba(255,255,255,0.16)",
+                            borderRadius: "999px",
+                            padding: "0.24rem 0.4rem",
+                            pointerEvents: "none",
+                            zIndex: 320,
+                            fontWeight: 400,
+                          }}
+                        >
+                          {BADGE_TIP_TEXT[slot]}
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
+                  </motion.button>
+                );
+              })}
+            </div>
+
+            {badgeCount < 3 ? (
+              <p
+                style={{
+                  fontSize: mobile ? "0.95rem" : "1rem",
+                  lineHeight: 1.3,
+                  opacity: 0.8,
+                  textAlign: "center",
+                }}
+              >
+                you&apos;ve collected {badgeCount}/3 badges. collect 3 to win a
+                small prize :)
+              </p>
+            ) : (
+              <p
+                style={{
+                  fontSize: mobile ? "0.95rem" : "1rem",
+                  lineHeight: 1.3,
+                  opacity: 0.8,
+                  textAlign: "center",
+                }}
+              >
+                thank you!! show this to our team and collect a small prize (if
+                theres any left...)
+              </p>
+            )}
+            <p
+              style={{
+                fontSize: mobile ? "0.66rem" : "0.68rem",
+                lineHeight: 1.2,
+                opacity: 0.52,
+                textAlign: "center",
+                marginTop: "0.42rem",
+              }}
+            >
+              (try refreshing the page...)
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </footer>
   );
 }
