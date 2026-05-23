@@ -4,11 +4,19 @@ import {
   useEffect,
   useRef,
   useState,
+  type CSSProperties,
   type FocusEvent,
   type MouseEvent,
   type TouchEvent,
 } from "react";
-import { AnimatePresence, motion, useScroll, useTransform, MotionValue } from "framer-motion";
+import {
+  AnimatePresence,
+  motion,
+  useInView,
+  useScroll,
+  useTransform,
+  MotionValue,
+} from "framer-motion";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import SlideSection from "./components/SlideSection";
@@ -506,7 +514,7 @@ function DesktopPhoneWrapper({
 }) {
   return (
     <div style={{ width: "100%", height: "80vh" }}>
-      <PhoneScene rotationY={phoneRotation} interactive={false} />
+      <LazyPhoneScene rotationY={phoneRotation} interactive={false} />
     </div>
   );
 }
@@ -585,7 +593,7 @@ function MobilePhoneWrapper({
 }: {
   phoneRotation: MotionValue<number>;
 }) {
-  return <PhoneScene rotationY={phoneRotation} interactive={true} />;
+  return <LazyPhoneScene rotationY={phoneRotation} interactive={true} />;
 }
 
 function GlobalGradientRail() {
@@ -623,8 +631,18 @@ function GlobalGradientRail() {
 }
 
 function SpacerArtwork() {
+  const artworkRef = useRef<HTMLDivElement>(null);
+  const isInView = useInView(artworkRef, { margin: "-12% 0px -12% 0px" });
+  const style: CSSProperties = {
+    opacity: isInView ? 1 : 0,
+    transform: isInView ? "translateY(88px) scale(1)" : "translateY(108px) scale(0.95)",
+    transition: "opacity 320ms ease-out, transform 420ms cubic-bezier(0.22, 1, 0.36, 1)",
+    willChange: "opacity, transform",
+  };
+
   return (
     <div
+      ref={artworkRef}
       style={{
         position: "sticky",
         top: 0,
@@ -636,20 +654,53 @@ function SpacerArtwork() {
         zIndex: 2,
       }}
     >
-      <Image
-        src="/videos/Untitled-1.png"
-        alt="Spacer artwork"
-        width={900}
-        height={900}
-        priority
-        style={{
-          width: "min(80vw, 520px)",
-          height: "auto",
-          maxHeight: "68vh",
-          objectFit: "contain",
-          display: "block",
-        }}
-      />
+      <div style={style}>
+        <Image
+          src="/videos/Untitled-1.png"
+          alt="Spacer artwork"
+          width={1200}
+          height={1200}
+          priority
+          style={{
+            width: "min(96vw, 760px)",
+            height: "auto",
+            maxHeight: "82vh",
+            objectFit: "contain",
+            display: "block",
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function LazyPhoneScene({
+  rotationY,
+  interactive,
+}: {
+  rotationY: MotionValue<number>;
+  interactive: boolean;
+}) {
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const isNearView = useInView(wrapperRef, {
+    margin: "450px 0px 450px 0px",
+    once: false,
+  });
+
+  return (
+    <div ref={wrapperRef} style={{ width: "100%", height: "100%" }}>
+      {isNearView ? (
+        <PhoneScene rotationY={rotationY} interactive={interactive} />
+      ) : (
+        <div
+          style={{
+            width: "100%",
+            height: "100%",
+            minHeight: "360px",
+            background: "transparent",
+          }}
+        />
+      )}
     </div>
   );
 }

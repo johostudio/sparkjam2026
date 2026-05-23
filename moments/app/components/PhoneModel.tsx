@@ -86,7 +86,7 @@ export default function PhoneModel({
     };
   }, []);
 
-  // Smooth rotation + floating bob
+  // Smooth rotation; keep motion minimal to reduce frame cost.
   useFrame(() => {
     if (!groupRef.current) return;
     const targetRotation =
@@ -99,10 +99,6 @@ export default function PhoneModel({
         0.06
       );
     }
-
-    // Subtle floating bob (reduced bounce)
-    const t = performance.now() / 1000;
-    groupRef.current.position.y = Math.sin(t * 0.8) * 0.015;
   });
 
   return (

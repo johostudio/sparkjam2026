@@ -32,6 +32,8 @@ export default function PhoneScene({
   rotationY,
   interactive = false,
 }: PhoneSceneProps) {
+  const isMobileView = interactive;
+
   return (
     <div
       style={{
@@ -41,6 +43,7 @@ export default function PhoneScene({
       }}
     >
       <Canvas
+        dpr={isMobileView ? [1, 1.15] : [1, 1.5]}
         camera={{
           position: [0, 0, 0.35],
           fov: 45,
@@ -48,25 +51,29 @@ export default function PhoneScene({
           far: 100,
         }}
         style={{ background: "transparent" }}
-        gl={{ alpha: true, antialias: true }}
+        gl={{
+          alpha: true,
+          antialias: !isMobileView,
+          powerPreference: "high-performance",
+        }}
       >
         {/* Lighting */}
-        <ambientLight intensity={0.5} />
-        <directionalLight position={[5, 5, 5]} intensity={1.4} />
-        <directionalLight position={[-3, 3, -3]} intensity={0.6} />
-        <pointLight position={[0, 2, 3]} intensity={0.8} color="#ffffff" />
-        <hemisphereLight args={["#ffffff", "#3a3a3a", 0.9]} />
+        <ambientLight intensity={isMobileView ? 0.64 : 0.5} />
+        <directionalLight position={[5, 5, 5]} intensity={isMobileView ? 1.1 : 1.35} />
+        <directionalLight position={[-3, 3, -3]} intensity={isMobileView ? 0.42 : 0.6} />
+        <pointLight position={[0, 2, 3]} intensity={isMobileView ? 0.56 : 0.76} color="#ffffff" />
+        <hemisphereLight args={["#ffffff", "#3a3a3a", isMobileView ? 0.72 : 0.9]} />
 
         {/* Local environment lights (no remote HDR fetch). */}
-        <Environment resolution={128}>
+        <Environment resolution={isMobileView ? 64 : 96}>
           <Lightformer
-            intensity={2}
+            intensity={isMobileView ? 1.45 : 2}
             color="#ffffff"
             position={[3, 2, 4]}
             scale={[2, 2, 1]}
           />
           <Lightformer
-            intensity={1.5}
+            intensity={isMobileView ? 1.05 : 1.5}
             color="#f5f5f5"
             position={[-3, 1, -4]}
             scale={[3, 3, 1]}
@@ -74,13 +81,15 @@ export default function PhoneScene({
         </Environment>
 
         {/* Subtle ground shadow */}
-        <ContactShadows
-          position={[0, -0.12, 0]}
-          opacity={0.25}
-          scale={0.5}
-          blur={2.5}
-          far={0.5}
-        />
+        {!isMobileView && (
+          <ContactShadows
+            position={[0, -0.12, 0]}
+            opacity={0.22}
+            scale={0.5}
+            blur={2.2}
+            far={0.5}
+          />
+        )}
 
         {/* Orbit controls — only active in interactive (mobile) mode */}
         {interactive && (
