@@ -334,28 +334,6 @@ function HeroQuickLinks({ mobile }: { mobile: boolean }) {
       </a>
       <a
         className="quick-link-icon"
-        href={INTRO_VIDEO_URL}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="Open YouTube video"
-        onMouseEnter={(event) => onIconMouseEnter(event, "youtube")}
-        onMouseLeave={hideTip}
-        onFocus={(event) => onIconFocus(event, "youtube")}
-        onBlur={hideTip}
-        onTouchStart={(event) => onTouchPreview(event, "youtube")}
-        style={{
-          width: `${iconSize}px`,
-          height: `${iconSize}px`,
-          color: "#fff",
-          opacity: 0.96,
-          position: "relative",
-          overflow: "visible",
-        }}
-      >
-        <YoutubeIcon />
-      </a>
-      <a
-        className="quick-link-icon"
         href={PROJECT_PAGE_URL}
         target="_blank"
         rel="noopener noreferrer"
@@ -387,6 +365,29 @@ function HeroQuickLinks({ mobile }: { mobile: boolean }) {
             transformOrigin: "center",
           }}
         />
+      </a>
+      <a
+        className="quick-link-icon"
+        href={INTRO_VIDEO_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Open YouTube video"
+        onMouseEnter={(event) => onIconMouseEnter(event, "youtube")}
+        onMouseLeave={hideTip}
+        onFocus={(event) => onIconFocus(event, "youtube")}
+        onBlur={hideTip}
+        onTouchStart={(event) => onTouchPreview(event, "youtube")}
+        style={{
+          width: `${iconSize}px`,
+          height: `${iconSize}px`,
+          color: "#fff",
+          opacity: 0.96,
+          position: "relative",
+          marginLeft: "0.16rem",
+          overflow: "visible",
+        }}
+      >
+        <YoutubeIcon />
       </a>
 
       <AnimatePresence>
